@@ -1,0 +1,2632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Eureka Red Green School Management</title>
+    
+    <!-- Android PWA Meta Tags -->
+    <meta name="theme-color" content="#006A4E">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="application-name" content="Eureka App">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for Financial Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js" type="module"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js" type="module"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        eureka: {
+                            red: '#D9232E',
+                            green: '#006A4E',
+                            darkGreen: '#004231',
+                            gold: '#FFB800',
+                            lightBg: '#F4F7F6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        /* Hide scrollbar for mobile native feel */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Android active press effect */
+        .touch-active:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-16">
+
+    <!-- Top Android App Header -->
+    <header class="bg-eureka-green text-white sticky top-0 z-50 shadow-md pt-safe">
+        <div class="max-w-md md:max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-eureka-red font-bold text-xl shadow-inner border-2 border-eureka-red shrink-0">
+                    E
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base leading-tight tracking-tight">Eureka Red Green School</h1>
+                    <p class="text-[10px] text-emerald-200 tracking-wider uppercase font-semibold">Homeo College Road, Gazipur Chowrasta</p>
+                </div>
+            </div>
+            
+            <!-- Quick Role Switcher Pill -->
+            <div class="relative">
+                <select id="roleSelector" onchange="switchRole(this.value)" class="bg-emerald-900 text-emerald-100 text-xs font-semibold py-1.5 px-3 pr-6 rounded-full border border-emerald-600 focus:outline-none focus:ring-2 focus:ring-eureka-gold appearance-none cursor-pointer">
+                    <option value="admin">🔒 Admin</option>
+                    <option value="teacher">👨‍🏫 Teacher</option>
+                    <option value="student">🎓 Student / Parent</option>
+                </select>
+                <i class="fa-solid font-xs fa-chevron-down absolute right-2.5 top-2.5 text-emerald-300 pointer-events-none text-[10px]"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Mobile Canvas Container -->
+    <main class="max-w-md md:max-w-4xl mx-auto w-full flex-grow p-3.5 space-y-3.5">
+
+        <!-- Android PWA Installation Banner -->
+        <div id="pwaBanner" class="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-3 rounded-2xl shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <i class="fa-solid fa-mobile-screen-button text-xl"></i>
+                <div>
+                    <h3 class="font-bold text-xs">Install on Android Phone 🤳</h3>
+                    <p class="text-[10px] text-amber-100">Tap browser menu <i class="fa-solid fa-ellipsis-vertical"></i> & select "Add to Home Screen"</p>
+                </div>
+            </div>
+            <button onclick="dismissBanner()" class="text-white text-xs bg-amber-700/50 w-6 h-6 rounded-full flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Role Badge Header -->
+        <div id="roleBadge" class="flex items-center justify-between bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex items-center gap-2.5">
+                <span id="roleIcon" class="w-8 h-8 rounded-xl bg-red-100 text-eureka-red flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-user-shield text-sm"></i>
+                </span>
+                <div>
+                    <span class="text-[11px] text-slate-400 font-semibold uppercase block leading-none">Active Dashboard</span>
+                    <span id="roleTitle" class="text-sm font-bold text-slate-800">Admin & Staff Portal</span>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <button id="adminLogoutBtn" onclick="handleAdminLogout()" class="text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 px-2 py-1 rounded-md flex items-center gap-1 transition hidden">
+                    <i class="fa-solid fa-right-from-bracket text-[9px]"></i> Logout Admin
+                </button>
+                <button onclick="toggleModal('modal-database-management', true)" class="text-[10px] font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 px-2 py-1 rounded-md flex items-center gap-1 transition">
+                    <i class="fa-solid fa-database text-eureka-green text-[9px]"></i> DB Backup
+                </button>
+                <span id="syncBadge" class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <i class="fa-solid fa-cloud text-[9px]"></i> <span id="syncText">Persisted</span>
+                </span>
+                <span id="systemTime" class="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">--:--</span>
+            </div>
+        </div>
+
+        <!-- 1. ADMIN / STAFF VIEW -->
+        <section id="view-admin" class="space-y-3.5">
+            <!-- Analytics Cards Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div class="bg-gradient-to-br from-emerald-600 to-emerald-800 text-white p-2.5 rounded-2xl shadow-sm">
+                    <i class="fa-solid fa-user-graduate text-emerald-200 text-xs"></i>
+                    <p class="text-xl font-extrabold mt-0.5" id="stat-students">0</p>
+                    <p class="text-[10px] text-emerald-100 font-medium">Pupils</p>
+                </div>
+                <div class="bg-gradient-to-br from-red-600 to-red-800 text-white p-2.5 rounded-2xl shadow-sm">
+                    <i class="fa-solid fa-chalkboard-user text-red-200 text-xs"></i>
+                    <p class="text-xl font-extrabold mt-0.5" id="stat-teachers">0</p>
+                    <p class="text-[10px] text-red-100 font-medium">Admin, Teachers and Stuffs</p>
+                </div>
+                <div class="bg-gradient-to-br from-amber-500 to-amber-700 text-white p-2.5 rounded-2xl shadow-sm">
+                    <i class="fa-solid fa-wallet text-amber-200 text-xs"></i>
+                    <p class="text-lg font-extrabold mt-0.5" id="stat-fees">$0</p>
+                    <p class="text-[10px] text-amber-100 font-medium">Collected Fees</p>
+                </div>
+                <div class="bg-gradient-to-br from-rose-600 to-rose-900 text-white p-2.5 rounded-2xl shadow-sm">
+                    <i class="fa-solid fa-receipt text-rose-200 text-xs"></i>
+                    <p class="text-lg font-extrabold mt-0.5" id="stat-expenses">$0</p>
+                    <p class="text-[10px] text-rose-100 font-medium">Total Expenses</p>
+                </div>
+            </div>
+
+            <!-- Mobile Touch Action Tabs -->
+            <div class="flex bg-slate-200 p-1 rounded-xl gap-1 text-[11px] font-bold text-slate-600 overflow-x-auto">
+                <button onclick="switchAdminTab('students')" id="btn-tab-students" class="flex-1 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition touch-active min-w-[65px]">Students</button>
+                <button onclick="switchAdminTab('staff')" id="btn-tab-staff" class="flex-1 py-2 rounded-lg transition touch-active min-w-[55px]">Staff</button>
+                <button onclick="switchAdminTab('fees')" id="btn-tab-fees" class="flex-1 py-2 rounded-lg transition touch-active min-w-[55px]">Fees</button>
+                <button onclick="switchAdminTab('expenses')" id="btn-tab-expenses" class="flex-1 py-2 rounded-lg transition touch-active min-w-[70px]">Expenses</button>
+                <button onclick="switchAdminTab('financial-statement')" id="btn-tab-financial-statement" class="flex-1 py-2 rounded-lg transition touch-active min-w-[130px] flex items-center justify-center gap-1.5"><i class="fa-solid fa-chart-pie text-emerald-600"></i> Statement</button>
+                <button onclick="switchAdminTab('announcements')" id="btn-tab-announcements" class="flex-1 py-2 rounded-lg transition touch-active min-w-[60px]">Notices</button>
+            </div>
+
+            <!-- Tab 1: Student Directory & Mobile Portfolio -->
+            <div id="admin-tab-students" class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-sm text-slate-700">Student Directory</h2>
+                        <p class="text-[10px] text-slate-400">Tap student card to manage portfolio</p>
+                    </div>
+                    <button onclick="toggleModal('modal-add-student', true)" class="bg-eureka-green text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-emerald-800 transition touch-active shadow">
+                        <i class="fa-solid fa-plus"></i> Enroll Pupil
+                    </button>
+                </div>
+
+                <!-- Touch Search & Arrange Controls -->
+                <div class="grid grid-cols-12 gap-2 text-xs">
+                    <div class="col-span-12 relative">
+                        <input type="text" id="searchStudentInput" oninput="renderStudentsDirectory()" placeholder="Search student name or roll ID..." class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green text-xs shadow-sm">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                    </div>
+                    <div class="col-span-6">
+                        <select id="filterGradeSelect" onchange="renderStudentsDirectory()" class="w-full py-2 px-2.5 bg-white border border-slate-200 rounded-xl outline-none font-semibold text-slate-600 shadow-sm text-xs">
+                            <option value="ALL">All Grades</option>
+                            <option value="Grade 1">Grade 1</option>
+                            <option value="Grade 2">Grade 2</option>
+                            <option value="Grade 3">Grade 3</option>
+                            <option value="Grade 4">Grade 4</option>
+                            <option value="Grade 5">Grade 5</option>
+                        </select>
+                    </div>
+                    <div class="col-span-6">
+                        <select id="sortStudentSelect" onchange="renderStudentsDirectory()" class="w-full py-2 px-2.5 bg-white border border-slate-200 rounded-xl outline-none font-semibold text-slate-600 shadow-sm text-xs">
+                            <option value="name_asc">Sort: Name (A-Z)</option>
+                            <option value="rank">Sort: Class Rank</option>
+                            <option value="id_asc">Sort: Roll ID</option>
+                            <option value="status">Sort: Fee Status</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div id="studentListContainer" class="divide-y divide-slate-100">
+                        <!-- Dynamic Student Items injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Staff Roster -->
+            <div id="admin-tab-staff" class="space-y-3 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 class="font-bold text-sm text-slate-700">Staff & Teacher Roster</h2>
+                    <button onclick="toggleModal('modal-add-staff', true)" class="bg-eureka-red text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-red-700 transition touch-active shadow">
+                        <i class="fa-solid fa-user-plus"></i> Add Staff
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div id="staffListContainer" class="divide-y divide-slate-100">
+                        <!-- Dynamic Staff Items injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Fee Receipts -->
+            <div id="admin-tab-fees" class="space-y-3 hidden">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h2 class="font-bold text-sm text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice-dollar text-eureka-green"></i> Record Fee Payment
+                    </h2>
+                    <form id="feePaymentForm" onsubmit="handleFeePayment(event)" class="space-y-2.5">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Select Student</label>
+                            <select id="feeStudentSelect" required class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-green outline-none">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Amount ($)</label>
+                                <input type="number" id="feeAmount" required placeholder="150" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-green outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Fee Type</label>
+                                <select id="feeType" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-green outline-none">
+                                    <option value="Tuition">Tuition</option>
+                                    <option value="Admission">Admission</option>
+                                    <option value="Books & Uniform">Books & Uniform</option>
+                                    <option value="Transport">Transport</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Date</label>
+                                <input type="date" id="feeDate" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-green outline-none">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-eureka-green text-white text-xs font-bold py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active">Collect & Save Receipt</button>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 space-y-3">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-700">Fee Collections Calendar History</h3>
+                            <p class="text-[10px] text-slate-400" id="feeHistorySummary">Showing all transactions</p>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <input type="date" id="feeDateFilter" onchange="renderFeeHistory()" class="text-xs py-1 px-2 bg-slate-100 border border-slate-200 rounded-lg outline-none text-slate-700">
+                            <button onclick="clearFeeDateFilter()" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-300 transition">Show All</button>
+                        </div>
+                    </div>
+                    <div id="feeHistoryContainer" class="space-y-2 text-xs divide-y divide-slate-100">
+                        <!-- Dynamic fee records -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: School Expenses -->
+            <div id="admin-tab-expenses" class="space-y-3 hidden">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h2 class="font-bold text-sm text-slate-700 flex items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-eureka-red"></i> Record School Expense
+                    </h2>
+                    <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-2.5">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Expense Category</label>
+                            <select id="expenseCategory" required class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-red outline-none font-medium">
+                                <option value="House Rent">House rent</option>
+                                <option value="Transport Rent">Transport rent</option>
+                                <option value="Water Bill">Water bill</option>
+                                <option value="Gas Bill">Gas bill</option>
+                                <option value="Electricity Bill">Electricity bill</option>
+                                <option value="Entertainment Expenses">Entertainment expenses</option>
+                                <option value="Snacks Bill">Snacks bill</option>
+                                <option value="Stationary Purchase Cost">Stationary purchase cost</option>
+                                <option value="Printing Cost">Printing cost</option>
+                                <option value="Conveyance Bill">Conveyance bill</option>
+                                <option value="Repair and Maintainence Bill">Repair and maintainence bill</option>
+                                <option value="Tax">Tax</option>
+                                <option value="VAT">VAT</option>
+                                <option value="Govt Fees">Govt fees</option>
+                                <option value="Misc. Expense">Misc. expense</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Amount ($)</label>
+                                <input type="number" id="expenseAmount" min="0" step="any" required placeholder="250" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-red outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Expense Date</label>
+                                <input type="date" id="expenseDate" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-red outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Note / Details (Optional)</label>
+                            <input type="text" id="expenseNotes" placeholder="e.g., Monthly utility bill payment" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-eureka-red outline-none">
+                        </div>
+                        <button type="submit" class="w-full bg-eureka-red text-white text-xs font-bold py-3 rounded-xl shadow hover:bg-red-700 transition touch-active">Record & Save Expense</button>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-3.5 space-y-3">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-700">Expense Vouchers Calendar History</h3>
+                            <p class="text-[10px] text-slate-400" id="expenseHistorySummary">Showing all expense records</p>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <select id="expenseCategoryFilter" onchange="renderExpenseHistory()" class="text-xs py-1 px-2 bg-slate-100 border border-slate-200 rounded-lg outline-none text-slate-700 font-medium">
+                                <option value="ALL">All Categories</option>
+                                <option value="House Rent">House rent</option>
+                                <option value="Transport Rent">Transport rent</option>
+                                <option value="Water Bill">Water bill</option>
+                                <option value="Gas Bill">Gas bill</option>
+                                <option value="Electricity Bill">Electricity bill</option>
+                                <option value="Entertainment Expenses">Entertainment expenses</option>
+                                <option value="Snacks Bill">Snacks bill</option>
+                                <option value="Stationary Purchase Cost">Stationary purchase cost</option>
+                                <option value="Printing Cost">Printing cost</option>
+                                <option value="Conveyance Bill">Conveyance bill</option>
+                                <option value="Repair and Maintainence Bill">Repair & Maintainence</option>
+                                <option value="Tax">Tax</option>
+                                <option value="VAT">VAT</option>
+                                <option value="Govt Fees">Govt fees</option>
+                                <option value="Misc. Expense">Misc. expense</option>
+                            </select>
+                            <input type="date" id="expenseDateFilter" onchange="renderExpenseHistory()" class="text-xs py-1 px-2 bg-slate-100 border border-slate-200 rounded-lg outline-none text-slate-700">
+                            <button onclick="clearExpenseFilters()" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-300 transition">Show All</button>
+                        </div>
+                    </div>
+                    <div id="expenseHistoryContainer" class="space-y-2 text-xs divide-y divide-slate-100">
+                        <!-- Dynamic expense records -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Executive Financial Statement & Charts -->
+            <div id="admin-tab-financial-statement" class="space-y-4 hidden">
+                <!-- Section Header & Controls -->
+                <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white p-4 rounded-3xl shadow-lg border border-slate-700/50 space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <span class="text-[10px] font-bold tracking-widest text-emerald-400 uppercase flex items-center gap-1.5">
+                                <i class="fa-solid fa-chart-line text-xs"></i> School Management Governance
+                            </span>
+                            <h2 class="text-lg font-extrabold tracking-tight mt-0.5">Financial Statement & Insights</h2>
+                            <p class="text-xs text-slate-300">Visual revenue, expenditures, cashflow analytics, and P&L ledger.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="finPeriodSelect" onchange="renderFinancialStatementPage()" class="bg-slate-800/80 text-white text-xs font-semibold px-3 py-2 rounded-xl border border-slate-700 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+                                <option value="ALL">🗓️ All Time Records</option>
+                                <option value="YTD">📅 Year 2026 (YTD)</option>
+                                <option value="90DAYS">⏱️ Last 90 Days</option>
+                                <option value="THIS_MONTH">📆 Current Month (Aug)</option>
+                            </select>
+                            <button onclick="printFinancialStatement()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition shadow flex items-center gap-1.5 touch-active shrink-0">
+                                <i class="fa-solid fa-print"></i> <span class="hidden sm:inline">Export P&L Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Health Summary Metric Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- KPI 1: Gross Operating Revenue -->
+                    <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gross Income</span>
+                            <span class="w-7 h-7 rounded-xl bg-emerald-100 text-eureka-green flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-money-bill-trend-up"></i>
+                            </span>
+                        </div>
+                        <p id="fin-kpi-revenue" class="text-2xl font-black text-slate-800 mt-2">$0</p>
+                        <div class="flex items-center gap-1 mt-1 text-[10px] text-emerald-600 font-semibold">
+                            <i class="fa-solid fa-circle-check"></i> <span id="fin-kpi-revenue-sub">0 Fee Receipts</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 2: Total Operating Expenses -->
+                    <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Expenses</span>
+                            <span class="w-7 h-7 rounded-xl bg-rose-100 text-eureka-red flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </span>
+                        </div>
+                        <p id="fin-kpi-expense" class="text-2xl font-black text-slate-800 mt-2">$0</p>
+                        <div class="flex items-center gap-1 mt-1 text-[10px] text-rose-600 font-semibold">
+                            <i class="fa-solid fa-receipt"></i> <span id="fin-kpi-expense-sub">0 Expense Vouchers</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 3: Net Cash Surplus / (Deficit) -->
+                    <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Net Cash Reserve</span>
+                            <span id="fin-kpi-surplus-icon" class="w-7 h-7 rounded-xl bg-emerald-100 text-eureka-green flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-vault"></i>
+                            </span>
+                        </div>
+                        <p id="fin-kpi-surplus" class="text-2xl font-black text-emerald-700 mt-2">$0</p>
+                        <div class="flex items-center gap-1 mt-1 text-[10px] font-bold">
+                            <span id="fin-kpi-surplus-badge" class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">SURPLUS</span>
+                        </div>
+                    </div>
+
+                    <!-- KPI 4: Operating Profit Margin % -->
+                    <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-200/80 relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Profit Margin</span>
+                            <span class="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xs">
+                                <i class="fa-solid fa-chart-pie"></i>
+                            </span>
+                        </div>
+                        <p id="fin-kpi-margin" class="text-2xl font-black text-slate-800 mt-2">0.0%</p>
+                        <div class="flex items-center gap-1 mt-1 text-[10px] text-slate-500 font-semibold">
+                            <i class="fa-solid fa-scale-balanced"></i> <span id="fin-kpi-margin-sub">Solvency Ratio</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 Essential Visual Charts Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Chart 1: Cashflow Trajectory (Income vs Expense Monthly Trend) -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chart-simple text-emerald-600"></i> Cash Flow Trajectory
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Monthly Operating Revenue vs Expenditures</p>
+                            </div>
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">Bar & Line</span>
+                        </div>
+                        <div class="relative h-56 w-full">
+                            <canvas id="chart-income-vs-expense"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Expense Allocation by Category -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chart-pie text-rose-600"></i> Expenditure Distribution
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Proportional breakdown by expense category</p>
+                            </div>
+                            <span class="text-[10px] bg-rose-50 text-rose-700 px-2 py-0.5 rounded-md font-semibold">Doughnut</span>
+                        </div>
+                        <div class="relative h-56 w-full flex items-center justify-center">
+                            <canvas id="chart-expense-category"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: Revenue Streams Breakdown by Fee Type -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bars-staggered text-blue-600"></i> Revenue Streams
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Collections itemized by fee category</p>
+                            </div>
+                            <span class="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-semibold">Fee Sources</span>
+                        </div>
+                        <div class="relative h-56 w-full">
+                            <canvas id="chart-fee-types"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 4: Cumulative Net Reserve Buildup -->
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2">
+                        <div class="flex justify-between items-center border-b pb-2">
+                            <div>
+                                <h3 class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-arrow-trend-up text-amber-600"></i> Net Reserve Buildup
+                                </h3>
+                                <p class="text-[10px] text-slate-400">Cumulative net surplus growth over time</p>
+                            </div>
+                            <span class="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md font-semibold">Growth Curve</span>
+                        </div>
+                        <div class="relative h-56 w-full">
+                            <canvas id="chart-net-reserve"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Health Insights Panel -->
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-2xl border border-emerald-200/80 shadow-sm flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-eureka-green text-white flex items-center justify-center font-bold text-lg shrink-0 shadow-sm">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-xs text-emerald-950 flex items-center gap-2">
+                            <span>Financial Health & Liquidity Insights</span>
+                            <span id="fin-health-badge" class="text-[9px] bg-emerald-200 text-emerald-900 font-extrabold px-2 py-0.5 rounded-full">HEALTHY SURPLUS</span>
+                        </h4>
+                        <p id="fin-health-text" class="text-xs text-emerald-900/80 leading-relaxed">
+                            Analyzing financial transactions...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Official Printable Income Statement (P&L Ledger Table) -->
+                <div id="printable-financial-statement" class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <div>
+                            <h3 class="font-extrabold text-base text-slate-800">Eureka Red Green Primary School</h3>
+                            <p class="text-xs text-slate-500 font-medium">Official Profit & Loss (P&L) Financial Statement</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] font-bold uppercase text-slate-400 block">Statement Period</span>
+                            <span id="fin-statement-period" class="text-xs font-bold text-emerald-800">All Time</span>
+                        </div>
+                    </div>
+
+                    <!-- P&L Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase font-bold text-[10px] border-b border-slate-200">
+                                    <th class="py-2.5 px-3">Account Title / Financial Line Item</th>
+                                    <th class="py-2.5 px-3 text-center">Receipts / Vouchers</th>
+                                    <th class="py-2.5 px-3 text-right">Amount ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <!-- Section A: Operating Revenues -->
+                                <tr class="bg-emerald-50/50 font-bold text-emerald-900 text-xs">
+                                    <td colspan="3" class="py-2 px-3">1. OPERATING REVENUES (FEE COLLECTIONS)</td>
+                                </tr>
+                                <tbody id="fin-table-revenue-body">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                                <tr class="font-extrabold text-slate-900 bg-slate-50 border-t border-b border-slate-200">
+                                    <td class="py-2 px-3 pl-6">TOTAL OPERATING REVENUE (A)</td>
+                                    <td id="fin-table-revenue-count" class="py-2 px-3 text-center">0</td>
+                                    <td id="fin-table-revenue-total" class="py-2 px-3 text-right text-eureka-green">$0.00</td>
+                                </tr>
+
+                                <!-- Section B: Operating Expenses -->
+                                <tr class="bg-rose-50/50 font-bold text-rose-900 text-xs">
+                                    <td colspan="3" class="py-2 px-3">2. OPERATING EXPENDITURES (VOUCHERS)</td>
+                                </tr>
+                                <tbody id="fin-table-expense-body">
+                                    <!-- Injected dynamically -->
+                                </tbody>
+                                <tr class="font-extrabold text-slate-900 bg-slate-50 border-t border-b border-slate-200">
+                                    <td class="py-2 px-3 pl-6">TOTAL OPERATING EXPENDITURES (B)</td>
+                                    <td id="fin-table-expense-count" class="py-2 px-3 text-center">0</td>
+                                    <td id="fin-table-expense-total" class="py-2 px-3 text-right text-rose-700">$0.00</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="border-t-2 border-slate-800 text-sm font-black bg-slate-900 text-white">
+                                    <td class="py-3 px-4">NET FINANCIAL SURPLUS / (DEFICIT) (A - B)</td>
+                                    <td class="py-3 px-4 text-center">--</td>
+                                    <td id="fin-table-net-total" class="py-3 px-4 text-right text-emerald-400">$0.00</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 6: Announcements -->
+            <div id="admin-tab-announcements" class="space-y-3 hidden">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="font-bold text-sm text-slate-700 mb-2">Post Notice to Android Phones</h2>
+                    <form id="noticeForm" onsubmit="handlePostNotice(event)" class="space-y-2.5">
+                        <input type="text" id="noticeTitle" placeholder="Notice Title" required class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red">
+                        <textarea id="noticeContent" placeholder="Notice details..." rows="3" required class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red"></textarea>
+                        <button type="submit" class="w-full bg-eureka-red text-white text-xs font-bold py-3 rounded-xl shadow hover:bg-red-700 transition touch-active">Broadcast Notice</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. TEACHER VIEW -->
+        <section id="view-teacher" class="space-y-3.5 hidden">
+            <!-- Attendance Selector & Tracker -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="font-bold text-sm text-slate-800">Daily Attendance</h2>
+                        <p class="text-[11px] text-slate-400">Class: Primary Section</p>
+                    </div>
+                    <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" id="attendanceDate">Today</span>
+                </div>
+
+                <div id="attendanceList" class="space-y-2 pt-1">
+                    <!-- Attendance list generated dynamically -->
+                </div>
+
+                <button onclick="saveAttendance()" class="w-full bg-eureka-green text-white text-xs font-bold py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> Save Daily Roll Call
+                </button>
+            </div>
+
+            <!-- Gradebook & Marks Entry -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-eureka-red"></i> Gradebook Entry
+                </h2>
+                <form id="gradeForm" onsubmit="handleGradeSubmit(event)" class="space-y-2.5">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Student</label>
+                            <select id="gradeStudentSelect" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                <!-- Dynamic options -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Subject</label>
+                            <select id="gradeSubject" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Mathematics">Bangla</option>
+                                <option value="English">English</option>
+                                <option value="Science">Science</option>
+                                <option value="Social Studies">Social Studies</option>
+                                <option value="Social Studies">Religion</option>
+                                <option value="Art & Craft">Art & Craft</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Score (0-100)</label>
+                            <input type="number" id="gradeScore" min="0" max="100" required placeholder="85" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Term</label>
+                            <select id="gradeTerm" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                <option value="Mid Term 1">First Term </option>
+                                <option value="Mid Term 1">Second Term </option>
+                                <option value="Final Term">Final Term</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-slate-800 text-white text-xs font-bold py-3 rounded-xl hover:bg-black transition touch-active">Save Grade Entry</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. STUDENT / PARENT VIEW -->
+        <section id="view-student" class="space-y-3.5 hidden">
+            <!-- Select Student Dropdown for Parents / Admin -->
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-users text-eureka-green"></i> Pupil Profile:
+                </span>
+                <select id="studentPortalSelector" onchange="switchStudentPortal(this.value)" class="text-xs font-bold bg-slate-100 text-slate-800 py-1.5 px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-eureka-green">
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+
+            <!-- Student Header Profile Banner -->
+            <div class="bg-gradient-to-r from-eureka-green to-emerald-900 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
+                <div id="studentAvatar" class="w-14 h-14 rounded-full bg-white text-eureka-green flex items-center justify-center font-bold text-2xl border-2 border-eureka-gold shadow shrink-0">
+                    🎓
+                </div>
+                <div>
+                    <h2 class="font-extrabold text-base leading-tight" id="studentProfileName">Abdullah</h2>
+                    <p class="text-xs text-emerald-200" id="studentProfileDetails">Roll No: #106 | Grade 2</p>
+                    <span id="studentProfileBadge" class="inline-block mt-1 text-[10px] bg-emerald-700/60 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold">Status: Active & Paid</span>
+                </div>
+            </div>
+
+            <!-- Attendance Summary & Quick Stats -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 text-center shadow-sm">
+                    <p class="text-xs text-slate-400 font-semibold uppercase">Overall Attendance</p>
+                    <p class="text-2xl font-extrabold text-eureka-green mt-1" id="studentAttendanceStat">0%</p>
+                    <p class="text-[10px] text-emerald-600 font-medium" id="studentAttendanceDetail">0/0 Days Attended</p>
+                </div>
+                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 text-center shadow-sm">
+                    <p class="text-xs text-slate-400 font-semibold uppercase">Average Grade</p>
+                    <p class="text-2xl font-extrabold text-eureka-red mt-1" id="studentAvgGrade">N/A</p>
+                    <p class="text-[10px] text-red-600 font-medium" id="studentGradeRank">Pending Exam Results</p>
+                </div>
+            </div>
+
+            <!-- Academic Grade Report Card -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-eureka-green"></i> Academic Performance Report
+                </h3>
+                <div id="studentGradesList" class="space-y-2 divide-y divide-slate-100">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Fee Payment Summary for Selected Student -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
+                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-amber-600"></i> Fee Payment History
+                </h3>
+                <div id="studentFeeHistory" class="space-y-2 text-xs">
+                    <!-- Injected dynamically -->
+                </div>
+            </div>
+
+            <!-- Announcements / School Bulletin -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn text-eureka-red"></i> School Announcements
+                </h3>
+                <div id="bulletinList" class="space-y-2.5">
+                    <!-- Dynamic Notices -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal 1: Complete Student Portfolio View -->
+    <div id="modal-student-portfolio" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div id="modalStudentAvatar" class="w-10 h-10 rounded-full bg-emerald-100 text-eureka-green font-bold flex items-center justify-center text-base">
+                        A
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-slate-800 leading-tight" id="modalStudentName">Student Name</h3>
+                        <p class="text-[11px] text-slate-400" id="modalStudentSub">Grade 2 | Roll #106</p>
+                    </div>
+                </div>
+                <button onclick="toggleModal('modal-student-portfolio', false)" class="text-slate-400 hover:text-slate-600 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 text-xs">
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span class="text-[10px] text-slate-400 font-semibold block uppercase">Guardian Contact</span>
+                    <a id="modalStudentGuardian" href="#" class="font-bold text-eureka-green flex items-center gap-1 mt-0.5"><i class="fa-solid fa-phone text-[10px]"></i> <span>--</span></a>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span class="text-[10px] text-slate-400 font-semibold block uppercase">Total Fees Paid</span>
+                    <span id="modalStudentFees" class="font-bold text-slate-800 mt-0.5 block">$0</span>
+                </div>
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <span class="text-[10px] text-slate-400 font-semibold block uppercase">Enrollment Dates</span>
+                    <span id="modalStudentDates" class="font-bold text-[10px] text-slate-700 mt-0.5 block leading-tight">Joined: --<br>Left: --</span>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-xs text-slate-700 flex justify-between items-center">
+                    <span><i class="fa-solid fa-book-open text-eureka-green"></i> Subject Score Card</span>
+                    <span id="modalStudentRankBadge" class="text-[10px] bg-amber-100 text-amber-800 font-extrabold px-2 py-0.5 rounded-full">Rank --</span>
+                </h4>
+                <div id="modalStudentGrades" class="bg-slate-50 rounded-2xl p-3 divide-y divide-slate-200/60 border border-slate-100">
+                    <!-- Dynamic Grades -->
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-xs text-slate-700"><i class="fa-solid fa-calendar-check text-eureka-red"></i> Attendance Record</h4>
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
+                    <div>
+                        <span class="font-bold text-slate-800">Attendance Rate</span>
+                        <p class="text-[10px] text-slate-400" id="modalStudentAttDetail">0 out of 0 classes attended</p>
+                    </div>
+                    <span id="modalStudentAttBadge" class="font-extrabold text-sm text-eureka-green bg-emerald-100 px-2.5 py-1 rounded-lg">0%</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+                <button onclick="quickCollectFeeForStudent()" class="flex-1 bg-eureka-green text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active">
+                    <i class="fa-solid fa-file-invoice-dollar mr-1"></i> Collect Fee
+                </button>
+                <button onclick="toggleModal('modal-student-portfolio', false)" class="flex-1 bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl hover:bg-slate-300 transition touch-active">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: Enroll New Student -->
+    <div id="modal-add-student" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-base text-slate-800">Enroll New Pupil</h3>
+                <button onclick="toggleModal('modal-add-student', false)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddStudent(event)" class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Student Name</label>
+                    <input type="text" id="newStudentName" required placeholder="e.g., Liam Smith" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Grade / Class</label>
+                        <select id="newStudentGrade" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            <option>Grade 1</option>
+                            <option>Grade 2</option>
+                            <option>Grade 3</option>
+                            <option>Grade 4</option>
+                            <option>Grade 5</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Guardian Contact</label>
+                        <input type="tel" id="newStudentContact" required placeholder="01700000000" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Joining Date</label>
+                        <input type="date" id="newStudentJoiningDate" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Leaving Date (Optional)</label>
+                        <input type="date" id="newStudentLeavingDate" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-eureka-green text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active">Complete Enrollment</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 3: Add New Staff -->
+    <div id="modal-add-staff" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-base text-slate-800">Register Staff Member</h3>
+                <button onclick="toggleModal('modal-add-staff', false)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form onsubmit="handleAddStaff(event)" class="space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Full Name</label>
+                    <input type="text" id="newStaffName" required placeholder="e.g., Sarah Jenkins" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Role</label>
+                        <select id="newStaffRole" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            <option value="Teacher">Teacher</option>
+                            <option value="Accountant">Accountant</option>
+                            <option value="Administrator">Administrator</option>
+                            <option value="Support Staff">Support Staff</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Phone</label>
+                        <input type="tel" id="newStaffPhone" required placeholder="01800000000" class="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Joining Date</label>
+                        <input type="date" id="newStaffJoiningDate" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Leaving Date (Optional)</label>
+                        <input type="date" id="newStaffLeavingDate" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-eureka-red text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-red-700 transition touch-active">Save Staff Record</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Database & Backup Management -->
+    <div id="modal-database-management" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-database text-eureka-green"></i> Database & Security
+                </h3>
+                <button onclick="toggleModal('modal-database-management', false)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                All inputted pupils, staff, fee receipts, expenses, and grades are automatically persisted in database storage.
+            </p>
+
+            <div class="space-y-2 pt-1">
+                <button onclick="refreshAndPersistDatabase()" class="w-full bg-blue-600 text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-blue-700 transition touch-active flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate text-xs"></i> Update & Refresh Database
+                </button>
+
+                <button onclick="exportDataBackup()" class="w-full bg-eureka-green text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> Export Data Backup (JSON)
+                </button>
+
+                <label class="w-full bg-slate-800 text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-black transition touch-active flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-upload"></i> Import Backup File (JSON)
+                    <input type="file" accept=".json" onchange="importDataBackup(event)" class="hidden">
+                </label>
+
+                <button onclick="resetToDefaultData()" class="w-full bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs py-2.5 rounded-xl hover:bg-rose-200 transition touch-active flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> Reset Database to Default
+                </button>
+            </div>
+
+            <div class="border-t pt-3 space-y-2">
+                <h4 class="font-bold text-xs text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-key text-eureka-red"></i> Change Admin Password
+                </h4>
+                <div class="flex gap-2">
+                    <input type="password" id="changeAdminPasswordInput" placeholder="New Admin Password" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red font-medium">
+                    <button onclick="changeAdminPassword()" class="bg-slate-800 text-white font-bold text-xs px-3 py-2.5 rounded-xl hover:bg-black transition touch-active">
+                        Update
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Admin Security Authentication -->
+    <div id="modal-admin-login" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl space-y-4 border border-slate-100">
+            <div class="text-center space-y-1">
+                <div class="w-12 h-12 rounded-2xl bg-red-100 text-eureka-red flex items-center justify-center font-bold text-xl mx-auto shadow-inner border border-red-200">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="font-extrabold text-base text-slate-800 pt-1">Admin Portal Security</h3>
+                <p class="text-[11px] text-slate-400">Please enter administrator security password to continue</p>
+            </div>
+
+            <form onsubmit="handleAdminLogin(event)" class="space-y-3 pt-1">
+                <div>
+                    <label class="text-[11px] font-bold text-slate-500 uppercase block mb-1">Admin Password</label>
+                    <div class="relative">
+                        <input type="password" id="adminPasswordInput" required placeholder="Enter password (default: admin123)" class="w-full text-xs p-3.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-red font-medium">
+                        <button type="button" onclick="togglePasswordVisibility('adminPasswordInput', 'pwdIcon')" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                            <i id="pwdIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                    <p id="adminLoginError" class="text-[11px] text-red-600 font-bold mt-1.5 hidden flex items-center gap-1">
+                        <i class="fa-solid fa-circle-exclamation"></i> Incorrect password. Default: admin123
+                    </p>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl text-[10px] text-amber-800 space-y-0.5">
+                    <p class="font-bold flex items-center gap-1"><i class="fa-solid fa-key"></i> Security Information:</p>
+                    <p>Default password is <span class="font-bold underline">admin123</span>. You can change this anytime inside Admin Settings.</p>
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                    <button type="submit" class="flex-1 bg-eureka-red text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-red-700 transition touch-active flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-shield-halved"></i> Unlock Admin
+                    </button>
+                    <button type="button" onclick="cancelAdminLogin()" class="bg-slate-100 text-slate-600 font-bold text-xs px-4 py-3 rounded-xl hover:bg-slate-200 transition touch-active">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Toast Notification -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Bottom Mobile Android Navigation Bar -->
+    <nav class="bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-40 pb-safe shadow-lg">
+        <div class="max-w-md md:max-w-4xl mx-auto flex justify-around py-2">
+            <button onclick="switchRole('admin')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-eureka-green touch-active" id="nav-admin">
+                <i class="fa-solid fa-user-shield text-lg"></i>
+                <span class="text-[10px] font-bold">Admin</span>
+            </button>
+            <button onclick="switchRole('teacher')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-eureka-green touch-active" id="nav-teacher">
+                <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                <span class="text-[10px] font-bold">Teacher</span>
+            </button>
+            <button onclick="switchRole('student')" class="flex flex-col items-center gap-0.5 text-slate-400 hover:text-eureka-green touch-active" id="nav-student">
+                <i class="fa-solid fa-graduation-cap text-lg"></i>
+                <span class="text-[10px] font-bold">Student</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Application Script & Firebase Persistence -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        window.appData = {
+            students: [],
+            staff: [],
+            grades: [],
+            transactions: [],
+            expenses: [],
+            notices: [],
+            attendance: {}
+        };
+
+        window.currentRole = 'admin';
+        window.activeStudentId = null;
+        window.selectedPortfolioStudentId = null;
+        window.db = null;
+        window.currentUser = null;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'eureka-school-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        async function initStorage() {
+            if (!firebaseConfig) {
+                console.warn("Cloud persistence config unavailable. Using local session.");
+                loadInitialFallbackData();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                window.db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.currentUser = user;
+                        document.getElementById('syncText').innerText = "Cloud Synced";
+                        setupFirestoreListeners(appId);
+                    }
+                });
+            } catch (err) {
+                console.error("Firebase auth error:", err);
+                loadInitialFallbackData();
+            }
+        }
+
+        function setupFirestoreListeners(appId) {
+            const publicPath = (colName) => collection(window.db, 'artifacts', appId, 'public', 'data', colName);
+
+            onSnapshot(publicPath('students'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                if (list.length === 0) {
+                    seedDefaultStudents(publicPath('students'));
+                } else {
+                    window.appData.students = list;
+                    if (!window.activeStudentId && list.length > 0) {
+                        window.activeStudentId = list[0].id;
+                    }
+                    window.renderAllData();
+                }
+            }, (err) => console.error("Students sync error:", err));
+
+            onSnapshot(publicPath('staff'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                if (list.length === 0) {
+                    seedDefaultStaff(publicPath('staff'));
+                } else {
+                    window.appData.staff = list;
+                    window.renderAllData();
+                }
+            }, (err) => console.error("Staff sync error:", err));
+
+            onSnapshot(publicPath('grades'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                if (list.length === 0) {
+                    seedDefaultGrades(publicPath('grades'));
+                } else {
+                    window.appData.grades = list;
+                    window.renderAllData();
+                }
+            }, (err) => console.error("Grades sync error:", err));
+
+            onSnapshot(publicPath('transactions'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                window.appData.transactions = list;
+                window.renderAllData();
+            }, (err) => console.error("Transactions sync error:", err));
+
+            onSnapshot(publicPath('expenses'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                if (list.length === 0) {
+                    seedDefaultExpenses(publicPath('expenses'));
+                } else {
+                    window.appData.expenses = list;
+                    window.renderAllData();
+                }
+            }, (err) => console.error("Expenses sync error:", err));
+
+            onSnapshot(publicPath('notices'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                if (list.length === 0) {
+                    seedDefaultNotices(publicPath('notices'));
+                } else {
+                    window.appData.notices = list;
+                    window.renderAllData();
+                }
+            }, (err) => console.error("Notices sync error:", err));
+        }
+
+        async function seedDefaultStudents(colRef) {
+            const defaults = [
+                { id: 106, name: "Abdullah", grade: "Grade 2", guardian: "01711223344", status: "Active", feesPaid: 150, attendedDays: 19, totalDays: 20 },
+                { id: 102, name: "Tarik Hasan", grade: "Grade 3", guardian: "01811223344", status: "Active", feesPaid: 200, attendedDays: 18, totalDays: 20 },
+                { id: 103, name: "Zubair Ahmed", grade: "Grade 1", guardian: "01911223344", status: "Pending Fee", feesPaid: 0, attendedDays: 16, totalDays: 20 },
+                { id: 104, name: "Nabila Chowdhury", grade: "Grade 2", guardian: "01511223344", status: "Active", feesPaid: 150, attendedDays: 20, totalDays: 20 }
+            ];
+            for (const item of defaults) {
+                await addDoc(colRef, item);
+            }
+        }
+
+        async function seedDefaultStaff(colRef) {
+            const defaults = [
+                { id: 1, name: "Rashid Khan", role: "Class Teacher (Grade 2)", phone: "01700112233" },
+                { id: 2, name: "Nusrat Jahan", role: "Math Specialist", phone: "01800112233" },
+                { id: 3, name: "Kamal Hossain", role: "Support & Maintenance", phone: "01900112233" }
+            ];
+            for (const item of defaults) {
+                await addDoc(colRef, item);
+            }
+        }
+
+        async function seedDefaultGrades(colRef) {
+            const defaults = [
+                { studentId: 106, subject: "Mathematics", score: 92, term: "Mid Term 1" },
+                { studentId: 106, subject: "English", score: 85, term: "Mid Term 1" },
+                { studentId: 106, subject: "Science", score: 88, term: "Mid Term 1" },
+
+                { studentId: 102, subject: "Mathematics", score: 78, term: "Mid Term 1" },
+                { studentId: 102, subject: "English", score: 82, term: "Mid Term 1" },
+                { studentId: 102, subject: "Science", score: 80, term: "Mid Term 1" },
+
+                { studentId: 103, subject: "Mathematics", score: 70, term: "Mid Term 1" },
+                { studentId: 103, subject: "English", score: 74, term: "Mid Term 1" },
+
+                { studentId: 104, subject: "Mathematics", score: 95, term: "Mid Term 1" },
+                { studentId: 104, subject: "Science", score: 91, term: "Mid Term 1" },
+                { studentId: 104, subject: "Art & Craft", score: 98, term: "Mid Term 1" }
+            ];
+            for (const item of defaults) {
+                await addDoc(colRef, item);
+            }
+        }
+
+        async function seedDefaultExpenses(colRef) {
+            const defaults = [
+                { category: "House Rent", amount: 500, date: "2026-08-01", notes: "August Campus Rent" },
+                { category: "Electricity Bill", amount: 120, date: "2026-08-10", notes: "Monthly Power Bill" },
+                { category: "Stationary Purchase Cost", amount: 45, date: "2026-08-15", notes: "Exam Papers & Markers" },
+                { category: "Snacks Bill", amount: 30, date: "2026-08-18", notes: "Staff Refreshments" }
+            ];
+            for (const item of defaults) {
+                await addDoc(colRef, item);
+            }
+        }
+
+        async function seedDefaultNotices(colRef) {
+            const defaults = [
+                { title: "Independence Cultural Week", content: "Preparations start next Monday. Parents are invited for art showcase.", date: "Aug 14, 2026" },
+                { title: "Term 2 Examination Schedule", content: "Final examinations start from September 10th. Routine published.", date: "Aug 12, 2026" }
+            ];
+            for (const item of defaults) {
+                await addDoc(colRef, item);
+            }
+        }
+
+        const LOCAL_DB_KEY = 'eureka_school_app_data_v2';
+
+        window.saveLocalState = function() {
+            try {
+                localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(window.appData));
+            } catch (e) {
+                console.error("Local storage save error:", e);
+            }
+        };
+
+        window.activeServerPort = 3000;
+        window.EUREKA_API_URL = window.EUREKA_API_URL || ""; // Set your cloud backend URL here (e.g. "https://eureka-backend.onrender.com")
+
+        async function syncWithPrismaServer() {
+            const endpointsToTry = [];
+            if (window.EUREKA_API_URL) {
+                endpointsToTry.push(window.EUREKA_API_URL.replace(/\/$/, '') + '/api/data');
+            }
+            const currentHost = window.location.hostname;
+            if (currentHost === 'localhost' || currentHost === '127.0.0.1' || /^(\d{1,3}\.){3}\d{1,3}$/.test(currentHost)) {
+                const portsToTry = [3000, 3001, 3002, 3003];
+                portsToTry.forEach(port => endpointsToTry.push(`http://${currentHost}:${port}/api/data`));
+            }
+
+            for (const url of endpointsToTry) {
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        const remote = await res.json();
+                        if (remote && remote.students && remote.students.length > 0) {
+                            window.appData = remote;
+                            window.saveLocalState();
+                            const syncEl = document.getElementById('syncText');
+                            if (syncEl) syncEl.innerText = `Prisma DB Synced`;
+                            if (typeof window.renderAllData === 'function') window.renderAllData();
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    // Try next endpoint
+                }
+            }
+        }
+
+        function loadInitialFallbackData() {
+            const saved = localStorage.getItem(LOCAL_DB_KEY);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.students && Array.isArray(parsed.students)) {
+                        window.appData = parsed;
+                        // Sanitize existing items to ensure joiningDate and leavingDate exist
+                        window.appData.students.forEach(s => {
+                            if (!s.joiningDate) s.joiningDate = "2024-01-10";
+                            if (s.leavingDate === undefined) s.leavingDate = "";
+                        });
+                        if (window.appData.staff) {
+                            window.appData.staff.forEach(st => {
+                                if (!st.joiningDate) st.joiningDate = "2023-01-15";
+                                if (st.leavingDate === undefined) st.leavingDate = "";
+                            });
+                        }
+                        if (!window.activeStudentId && window.appData.students.length > 0) {
+                            window.activeStudentId = window.appData.students[0].id;
+                        }
+                        const syncEl = document.getElementById('syncText');
+                        if (syncEl) syncEl.innerText = "Local DB Saved";
+                        if (typeof window.renderAllData === 'function') window.renderAllData();
+                        syncWithPrismaServer();
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Failed to parse saved local database:", e);
+                }
+            }
+
+            window.appData.students = [
+                { id: 106, name: "Abdullah", grade: "Grade 2", guardian: "01711223344", status: "Active", feesPaid: 150, attendedDays: 19, totalDays: 20, joiningDate: "2024-01-10", leavingDate: "" },
+                { id: 102, name: "Tarik Hasan", grade: "Grade 3", guardian: "01811223344", status: "Active", feesPaid: 200, attendedDays: 18, totalDays: 20, joiningDate: "2023-01-15", leavingDate: "" },
+                { id: 103, name: "Zubair Ahmed", grade: "Grade 1", guardian: "01911223344", status: "Pending Fee", feesPaid: 0, attendedDays: 16, totalDays: 20, joiningDate: "2024-02-01", leavingDate: "" },
+                { id: 104, name: "Nabila Chowdhury", grade: "Grade 2", guardian: "01511223344", status: "Active", feesPaid: 150, attendedDays: 20, totalDays: 20, joiningDate: "2024-01-05", leavingDate: "" }
+            ];
+            window.appData.staff = [
+                { id: 1, name: "Rashid Khan", role: "Class Teacher (Grade 2)", phone: "01700112233", joiningDate: "2022-03-15", leavingDate: "" },
+                { id: 2, name: "Nusrat Jahan", role: "Math Specialist", phone: "01800112233", joiningDate: "2022-08-01", leavingDate: "" },
+                { id: 3, name: "Kamal Hossain", role: "Support & Maintenance", phone: "01900112233", joiningDate: "2021-05-10", leavingDate: "" }
+            ];
+            window.appData.grades = [
+                { studentId: 106, subject: "Mathematics", score: 92, term: "Mid Term 1" },
+                { studentId: 106, subject: "English", score: 85, term: "Mid Term 1" },
+                { studentId: 106, subject: "Science", score: 88, term: "Mid Term 1" },
+                { studentId: 102, subject: "Mathematics", score: 78, term: "Mid Term 1" },
+                { studentId: 102, subject: "English", score: 82, term: "Mid Term 1" },
+                { studentId: 102, subject: "Science", score: 80, term: "Mid Term 1" },
+                { studentId: 103, subject: "Mathematics", score: 70, term: "Mid Term 1" },
+                { studentId: 103, subject: "English", score: 74, term: "Mid Term 1" },
+                { studentId: 104, subject: "Mathematics", score: 95, term: "Mid Term 1" },
+                { studentId: 104, subject: "Science", score: 91, term: "Mid Term 1" },
+                { studentId: 104, subject: "Art & Craft", score: 98, term: "Mid Term 1" }
+            ];
+            window.appData.transactions = [
+                { id: 1001, studentId: 106, studentName: "Abdullah", type: "Admission", amount: 250, date: "2026-05-05", notes: "New Enrollment Fee" },
+                { id: 1002, studentId: 102, studentName: "Tarik Hasan", type: "Tuition", amount: 200, date: "2026-05-10", notes: "May Monthly Fee" },
+                { id: 1003, studentId: 104, studentName: "Nabila Chowdhury", type: "Examination", amount: 80, date: "2026-05-15", notes: "Term 1 Exam Fee" },
+                { id: 1004, studentId: 106, studentName: "Abdullah", type: "Tuition", amount: 150, date: "2026-06-02", notes: "June Monthly Fee" },
+                { id: 1005, studentId: 102, studentName: "Tarik Hasan", type: "Tuition", amount: 200, date: "2026-06-05", notes: "June Monthly Fee" },
+                { id: 1006, studentId: 103, studentName: "Zubair Ahmed", type: "Session", amount: 300, date: "2026-06-12", notes: "Annual Session Fee" },
+                { id: 1007, studentId: 104, studentName: "Nabila Chowdhury", type: "Tuition", amount: 150, date: "2026-06-18", notes: "June Monthly Fee" },
+                { id: 1008, studentId: 106, studentName: "Abdullah", type: "Tuition", amount: 150, date: "2026-07-04", notes: "July Monthly Fee" },
+                { id: 1009, studentId: 102, studentName: "Tarik Hasan", type: "Tuition", amount: 200, date: "2026-07-08", notes: "July Monthly Fee" },
+                { id: 1010, studentId: 106, studentName: "Abdullah", type: "Examination", amount: 80, date: "2026-07-15", notes: "Mid-Term Exam Fee" },
+                { id: 1011, studentId: 104, studentName: "Nabila Chowdhury", type: "Tuition", amount: 150, date: "2026-07-22", notes: "July Monthly Fee" },
+                { id: 1012, studentId: 106, studentName: "Abdullah", type: "Tuition", amount: 150, date: "2026-08-02", notes: "August Monthly Fee" },
+                { id: 1013, studentId: 102, studentName: "Tarik Hasan", type: "Tuition", amount: 200, date: "2026-08-05", notes: "August Monthly Fee" },
+                { id: 1014, studentId: 104, studentName: "Nabila Chowdhury", type: "Tuition", amount: 150, date: "2026-08-12", notes: "August Monthly Fee" },
+                { id: 1015, studentId: 103, studentName: "Zubair Ahmed", type: "Admission", amount: 250, date: "2026-08-16", notes: "Admission Charge" }
+            ];
+            window.appData.expenses = [
+                { category: "House Rent", amount: 500, date: "2026-05-01", notes: "May Campus Rent" },
+                { category: "Electricity Bill", amount: 110, date: "2026-05-10", notes: "May Power Bill" },
+                { category: "Stationary Purchase Cost", amount: 60, date: "2026-05-15", notes: "Classroom Supplies" },
+                { category: "House Rent", amount: 500, date: "2026-06-01", notes: "June Campus Rent" },
+                { category: "Electricity Bill", amount: 115, date: "2026-06-12", notes: "June Power Bill" },
+                { category: "Printing Cost", amount: 75, date: "2026-06-18", notes: "Report Cards Printing" },
+                { category: "Snacks Bill", amount: 25, date: "2026-06-25", notes: "Staff Meeting Refreshments" },
+                { category: "House Rent", amount: 500, date: "2026-07-01", notes: "July Campus Rent" },
+                { category: "Electricity Bill", amount: 125, date: "2026-07-09", notes: "July Power Bill" },
+                { category: "Conveyance Bill", amount: 50, date: "2026-07-14", notes: "Admin Transport" },
+                { category: "Repair and Maintainence Bill", amount: 90, date: "2026-07-28", notes: "Fan & Light Repairs" },
+                { category: "House Rent", amount: 500, date: "2026-08-01", notes: "August Campus Rent" },
+                { category: "Electricity Bill", amount: 120, date: "2026-08-10", notes: "Monthly Power Bill" },
+                { category: "Stationary Purchase Cost", amount: 45, date: "2026-08-15", notes: "Exam Papers & Markers" },
+                { category: "Snacks Bill", amount: 30, date: "2026-08-18", notes: "Staff Refreshments" }
+            ];
+            window.appData.notices = [
+                { title: "Independence Cultural Week", content: "Preparations start next Monday. Parents are invited for art showcase.", date: "Aug 14, 2026" },
+                { title: "Term 2 Examination Schedule", content: "Final examinations start from September 10th. Routine published.", date: "Aug 12, 2026" }
+            ];
+            window.activeStudentId = 106;
+            window.saveLocalState();
+            if (typeof window.renderAllData === 'function') window.renderAllData();
+            syncWithPrismaServer();
+        }
+
+        window.saveToCloud = async function(colName, payload) {
+            let savedInCloud = false;
+            if (window.db) {
+                try {
+                    const colRef = collection(window.db, 'artifacts', appId, 'public', 'data', colName);
+                    await addDoc(colRef, payload);
+                    savedInCloud = true;
+                } catch (err) {
+                    console.error(`Cloud save failed for ${colName}, fallback to local:`, err);
+                }
+            }
+
+            if (colName === 'students') {
+                window.appData.students.push(payload);
+                if (!window.activeStudentId) window.activeStudentId = payload.id;
+            } else if (colName === 'staff') {
+                window.appData.staff.push(payload);
+            } else if (colName === 'grades') {
+                window.appData.grades.push(payload);
+            } else if (colName === 'transactions') {
+                window.appData.transactions.unshift(payload);
+            } else if (colName === 'expenses') {
+                window.appData.expenses.unshift(payload);
+            } else if (colName === 'notices') {
+                window.appData.notices.unshift(payload);
+            }
+
+            window.saveLocalState();
+            if (typeof window.renderAllData === 'function') window.renderAllData();
+
+            // Sync with Prisma backend server if available
+            try {
+                const apiPath = colName === 'transactions' ? 'fees' : colName;
+                const endpoint = window.EUREKA_API_URL
+                    ? `${window.EUREKA_API_URL.replace(/\/$/, '')}/api/${apiPath}`
+                    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                        ? `http://localhost:${window.activeServerPort || 3000}/api/${apiPath}`
+                        : `/api/${apiPath}`);
+
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).catch(() => {});
+            } catch (e) {}
+        }
+
+        window.updateStudentCloud = async function(docId, updatedFields) {
+            window.saveLocalState();
+            if (!window.db || !docId) return;
+            try {
+                const docRef = doc(window.db, 'artifacts', appId, 'public', 'data', 'students', docId);
+                await setDoc(docRef, updatedFields, { merge: true });
+            } catch (err) {
+                console.error("Cloud update failed:", err);
+            }
+        }
+
+        initStorage();
+    </script>
+
+    <!-- App UI Controller -->
+    <script>
+        window.isAdminAuthenticated = sessionStorage.getItem('eureka_admin_authed') === 'true';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateClock();
+            setInterval(updateClock, 1000);
+            const today = new Date().toISOString().split('T')[0];
+            const feeDateEl = document.getElementById('feeDate');
+            if (feeDateEl) feeDateEl.value = today;
+            const expDateEl = document.getElementById('expenseDate');
+            if (expDateEl) expDateEl.value = today;
+            const sjDateEl = document.getElementById('newStudentJoiningDate');
+            if (sjDateEl) sjDateEl.value = today;
+            const stjDateEl = document.getElementById('newStaffJoiningDate');
+            if (stjDateEl) stjDateEl.value = today;
+
+            if (window.isAdminAuthenticated) {
+                switchRole('admin');
+            } else {
+                switchRole('student');
+            }
+        });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('systemTime').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('attendanceDate').innerText = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function switchRole(role) {
+            if (role === 'admin' && !window.isAdminAuthenticated) {
+                document.getElementById('roleSelector').value = window.currentRole && window.currentRole !== 'admin' ? window.currentRole : 'student';
+                toggleModal('modal-admin-login', true);
+                const pwdInput = document.getElementById('adminPasswordInput');
+                if (pwdInput) {
+                    pwdInput.value = '';
+                    pwdInput.focus();
+                }
+                const errEl = document.getElementById('adminLoginError');
+                if (errEl) errEl.classList.add('hidden');
+                showToast("🔒 Admin password required to access portal");
+                return;
+            }
+
+            window.currentRole = role;
+            document.getElementById('roleSelector').value = role;
+
+            ['admin', 'teacher', 'student'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+                document.getElementById(`nav-${v}`).classList.remove('text-eureka-green', 'font-bold');
+                document.getElementById(`nav-${v}`).classList.add('text-slate-400');
+            });
+
+            document.getElementById(`view-${role}`).classList.remove('hidden');
+            document.getElementById(`nav-${role}`).classList.add('text-eureka-green', 'font-bold');
+            document.getElementById(`nav-${role}`).classList.remove('text-slate-400');
+
+            const badgeTitle = document.getElementById('roleTitle');
+            const badgeIcon = document.getElementById('roleIcon');
+            const logoutBtn = document.getElementById('adminLogoutBtn');
+
+            if (role === 'admin') {
+                badgeTitle.innerText = "Admin & Staff Portal";
+                badgeIcon.className = "w-8 h-8 rounded-xl bg-red-100 text-eureka-red flex items-center justify-center font-bold";
+                badgeIcon.innerHTML = `<i class="fa-solid fa-user-shield text-sm"></i>`;
+                if (logoutBtn) logoutBtn.classList.remove('hidden');
+            } else if (role === 'teacher') {
+                badgeTitle.innerText = "Teacher Classroom Hub";
+                badgeIcon.className = "w-8 h-8 rounded-xl bg-emerald-100 text-eureka-green flex items-center justify-center font-bold";
+                badgeIcon.innerHTML = `<i class="fa-solid fa-chalkboard-user text-sm"></i>`;
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+            } else {
+                badgeTitle.innerText = "Student & Parent Portal";
+                badgeIcon.className = "w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold";
+                badgeIcon.innerHTML = `<i class="fa-solid fa-graduation-cap text-sm"></i>`;
+                if (logoutBtn) logoutBtn.classList.add('hidden');
+                renderStudentPortalView(window.activeStudentId);
+            }
+        }
+
+        window.chartInstances = {};
+
+        function switchAdminTab(tabName) {
+            ['students', 'staff', 'fees', 'expenses', 'financial-statement', 'announcements'].forEach(t => {
+                const tabEl = document.getElementById(`admin-tab-${t}`);
+                if (tabEl) tabEl.classList.add('hidden');
+                const btn = document.getElementById(`btn-tab-${t}`);
+                if (btn) btn.classList.remove('bg-white', 'text-emerald-800', 'shadow-sm');
+            });
+
+            const activeTab = document.getElementById(`admin-tab-${tabName}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            const activeBtn = document.getElementById(`btn-tab-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('bg-white', 'text-emerald-800', 'shadow-sm');
+
+            if (tabName === 'financial-statement') {
+                renderFinancialStatementPage();
+            }
+        }
+
+        function renderFinancialStatementPage() {
+            const period = document.getElementById('finPeriodSelect')?.value || 'ALL';
+            let transactions = [...(window.appData.transactions || [])];
+            let expenses = [...(window.appData.expenses || [])];
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonthStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            if (period === 'YTD') {
+                transactions = transactions.filter(t => t.date && t.date.startsWith(`${currentYear}`));
+                expenses = expenses.filter(e => e.date && e.date.startsWith(`${currentYear}`));
+            } else if (period === 'THIS_MONTH') {
+                transactions = transactions.filter(t => t.date && t.date.startsWith(currentMonthStr));
+                expenses = expenses.filter(e => e.date && e.date.startsWith(currentMonthStr));
+            } else if (period === '90DAYS') {
+                const ninetyDaysAgo = new Date();
+                ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+                transactions = transactions.filter(t => t.date && new Date(t.date) >= ninetyDaysAgo);
+                expenses = expenses.filter(e => e.date && new Date(e.date) >= ninetyDaysAgo);
+            }
+
+            // Calculate KPIs
+            const totalRevenue = transactions.reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0);
+            const totalExpenses = expenses.reduce((acc, e) => acc + (parseFloat(e.amount) || 0), 0);
+            const netSurplus = totalRevenue - totalExpenses;
+            const margin = totalRevenue > 0 ? ((netSurplus / totalRevenue) * 100).toFixed(1) : '0.0';
+
+            const revEl = document.getElementById('fin-kpi-revenue');
+            if (revEl) revEl.innerText = `$${totalRevenue.toLocaleString()}`;
+            const revSubEl = document.getElementById('fin-kpi-revenue-sub');
+            if (revSubEl) revSubEl.innerText = `${transactions.length} Fee Receipts`;
+
+            const expEl = document.getElementById('fin-kpi-expense');
+            if (expEl) expEl.innerText = `$${totalExpenses.toLocaleString()}`;
+            const expSubEl = document.getElementById('fin-kpi-expense-sub');
+            if (expSubEl) expSubEl.innerText = `${expenses.length} Expense Vouchers`;
+
+            const surplusEl = document.getElementById('fin-kpi-surplus');
+            const surplusBadge = document.getElementById('fin-kpi-surplus-badge');
+            const surplusIcon = document.getElementById('fin-kpi-surplus-icon');
+            if (surplusEl) {
+                if (netSurplus >= 0) {
+                    surplusEl.innerText = `+$${netSurplus.toLocaleString()}`;
+                    surplusEl.className = "text-2xl font-black text-emerald-700 mt-2";
+                    if (surplusBadge) {
+                        surplusBadge.innerText = "SURPLUS (PROFITABLE)";
+                        surplusBadge.className = "bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md";
+                    }
+                    if (surplusIcon) surplusIcon.className = "w-7 h-7 rounded-xl bg-emerald-100 text-eureka-green flex items-center justify-center text-xs";
+                } else {
+                    surplusEl.innerText = `-$${Math.abs(netSurplus).toLocaleString()}`;
+                    surplusEl.className = "text-2xl font-black text-rose-700 mt-2";
+                    if (surplusBadge) {
+                        surplusBadge.innerText = "DEFICIT (LOSS)";
+                        surplusBadge.className = "bg-rose-100 text-rose-800 px-2 py-0.5 rounded-md";
+                    }
+                    if (surplusIcon) surplusIcon.className = "w-7 h-7 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-xs";
+                }
+            }
+
+            const marginEl = document.getElementById('fin-kpi-margin');
+            if (marginEl) marginEl.innerText = `${margin}%`;
+            const marginSubEl = document.getElementById('fin-kpi-margin-sub');
+            if (marginSubEl) marginSubEl.innerText = netSurplus >= 0 ? "Healthy Profitability" : "Operational Deficit";
+
+            // Statement Period text
+            const periodMap = {
+                'ALL': 'All Historical Records',
+                'YTD': `Year ${currentYear} (YTD)`,
+                '90DAYS': 'Last 90 Days',
+                'THIS_MONTH': 'Current Month'
+            };
+            const periodLabel = document.getElementById('fin-statement-period');
+            if (periodLabel) periodLabel.innerText = periodMap[period] || 'All Time';
+
+            // Populate P&L Table Revenue Lines
+            const revTypes = {};
+            transactions.forEach(t => {
+                const typeKey = t.type || 'Other Fee';
+                if (!revTypes[typeKey]) revTypes[typeKey] = { count: 0, amount: 0 };
+                revTypes[typeKey].count += 1;
+                revTypes[typeKey].amount += (parseFloat(t.amount) || 0);
+            });
+
+            const revBody = document.getElementById('fin-table-revenue-body');
+            if (revBody) {
+                const typeKeys = Object.keys(revTypes);
+                if (typeKeys.length === 0) {
+                    revBody.innerHTML = `<tr><td colspan="3" class="py-2 px-3 text-slate-400 italic">No revenue transactions found for period.</td></tr>`;
+                } else {
+                    revBody.innerHTML = typeKeys.map(k => `
+                        <tr>
+                            <td class="py-2 px-3 pl-6 font-semibold text-slate-700"><i class="fa-solid fa-angle-right text-[10px] text-emerald-600 mr-1"></i> ${k} Fee Collections</td>
+                            <td class="py-2 px-3 text-center text-slate-500">${revTypes[k].count}</td>
+                            <td class="py-2 px-3 text-right font-bold text-slate-800">$${revTypes[k].amount.toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+            const revCountEl = document.getElementById('fin-table-revenue-count');
+            if (revCountEl) revCountEl.innerText = transactions.length;
+            const revTotalEl = document.getElementById('fin-table-revenue-total');
+            if (revTotalEl) revTotalEl.innerText = `$${totalRevenue.toLocaleString()}`;
+
+            // Populate P&L Table Expense Lines
+            const expCats = {};
+            expenses.forEach(e => {
+                const catKey = e.category || 'Misc. Expense';
+                if (!expCats[catKey]) expCats[catKey] = { count: 0, amount: 0 };
+                expCats[catKey].count += 1;
+                expCats[catKey].amount += (parseFloat(e.amount) || 0);
+            });
+
+            const expBody = document.getElementById('fin-table-expense-body');
+            if (expBody) {
+                const catKeys = Object.keys(expCats);
+                if (catKeys.length === 0) {
+                    expBody.innerHTML = `<tr><td colspan="3" class="py-2 px-3 text-slate-400 italic">No expense vouchers found for period.</td></tr>`;
+                } else {
+                    expBody.innerHTML = catKeys.map(k => `
+                        <tr>
+                            <td class="py-2 px-3 pl-6 font-semibold text-slate-700"><i class="fa-solid fa-angle-right text-[10px] text-rose-600 mr-1"></i> ${k}</td>
+                            <td class="py-2 px-3 text-center text-slate-500">${expCats[k].count}</td>
+                            <td class="py-2 px-3 text-right font-bold text-slate-800">$${expCats[k].amount.toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                }
+            }
+            const expCountEl = document.getElementById('fin-table-expense-count');
+            if (expCountEl) expCountEl.innerText = expenses.length;
+            const expTotalEl = document.getElementById('fin-table-expense-total');
+            if (expTotalEl) expTotalEl.innerText = `$${totalExpenses.toLocaleString()}`;
+
+            const netTotalEl = document.getElementById('fin-table-net-total');
+            if (netTotalEl) {
+                netTotalEl.innerText = `${netSurplus >= 0 ? '+' : ''}$${netSurplus.toLocaleString()}`;
+                netTotalEl.className = netSurplus >= 0 ? "py-3 px-4 text-right text-emerald-400 font-extrabold" : "py-3 px-4 text-right text-rose-400 font-extrabold";
+            }
+
+            // Financial Insights Text
+            const healthText = document.getElementById('fin-health-text');
+            const healthBadge = document.getElementById('fin-health-badge');
+            if (healthText && healthBadge) {
+                if (totalRevenue === 0 && totalExpenses === 0) {
+                    healthText.innerHTML = `No financial activity logged for this period. Add fee receipts or expense vouchers to see insights.`;
+                    healthBadge.innerText = "NO DATA";
+                    healthBadge.className = "text-[9px] bg-slate-200 text-slate-800 font-extrabold px-2 py-0.5 rounded-full";
+                } else if (netSurplus >= 0) {
+                    const topExpCat = Object.keys(expCats).sort((a,b) => expCats[b].amount - expCats[a].amount)[0] || 'N/A';
+                    healthText.innerHTML = `<strong>Positive Surplus of $${netSurplus.toLocaleString()} (${margin}% profit margin).</strong> Gross revenues adequately cover operating expenses. Top expenditure category is <em>"${topExpCat}"</em>. School cash flow maintains strong reserve buffer.`;
+                    healthBadge.innerText = "HEALTHY SURPLUS";
+                    healthBadge.className = "text-[9px] bg-emerald-200 text-emerald-900 font-extrabold px-2 py-0.5 rounded-full";
+                } else {
+                    healthText.innerHTML = `<strong>Deficit of -$${Math.abs(netSurplus).toLocaleString()}.</strong> Operating costs exceed collected revenues by ${Math.abs(margin)}%. Review expense vouchers and ensure timely collection of pending pupil tuition fees.`;
+                    healthBadge.innerText = "DEFICIT WARNING";
+                    healthBadge.className = "text-[9px] bg-rose-200 text-rose-900 font-extrabold px-2 py-0.5 rounded-full";
+                }
+            }
+
+            // Render Charts
+            renderFinancialCharts(transactions, expenses);
+        }
+
+        function renderFinancialCharts(transactions, expenses) {
+            if (typeof Chart === 'undefined') {
+                console.warn("Chart.js not loaded yet");
+                return;
+            }
+
+            // Helper to get month labels (YYYY-MM)
+            const allDates = [...transactions.map(t => t.date), ...expenses.map(e => e.date)].filter(Boolean).sort();
+            let months = [];
+            if (allDates.length > 0) {
+                const uniqueMonths = new Set(allDates.map(d => d.substring(0, 7)));
+                months = Array.from(uniqueMonths).sort();
+            } else {
+                months = ["2026-05", "2026-06", "2026-07", "2026-08"];
+            }
+
+            const monthLabels = months.map(m => {
+                const parts = m.split('-');
+                if (parts.length < 2) return m;
+                const y = parts[0];
+                const mon = parts[1];
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                return `${monthNames[parseInt(mon, 10) - 1]} ${y}`;
+            });
+
+            // Group Income & Expense by Month
+            const monthlyRevenue = months.map(m => {
+                return transactions
+                    .filter(t => t.date && t.date.startsWith(m))
+                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+            });
+
+            const monthlyExpense = months.map(m => {
+                return expenses
+                    .filter(e => e.date && e.date.startsWith(m))
+                    .reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+            });
+
+            const monthlyNetProfit = monthlyRevenue.map((rev, idx) => rev - monthlyExpense[idx]);
+
+            // Cumulative Net Reserve
+            let runningTotal = 0;
+            const cumulativeReserve = monthlyNetProfit.map(p => {
+                runningTotal += p;
+                return runningTotal;
+            });
+
+            // Chart 1: Income vs Expense Bar + Line Chart
+            const ctx1 = document.getElementById('chart-income-vs-expense')?.getContext('2d');
+            if (ctx1) {
+                if (window.chartInstances.incomeVsExpense) window.chartInstances.incomeVsExpense.destroy();
+                window.chartInstances.incomeVsExpense = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: monthLabels,
+                        datasets: [
+                            {
+                                label: 'Revenue ($)',
+                                data: monthlyRevenue,
+                                backgroundColor: 'rgba(0, 106, 78, 0.85)',
+                                borderColor: '#006A4E',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'Expense ($)',
+                                data: monthlyExpense,
+                                backgroundColor: 'rgba(217, 35, 46, 0.85)',
+                                borderColor: '#D9232E',
+                                borderWidth: 1,
+                                borderRadius: 6
+                            },
+                            {
+                                label: 'Net Surplus ($)',
+                                data: monthlyNetProfit,
+                                type: 'line',
+                                borderColor: '#FFB800',
+                                backgroundColor: 'rgba(255, 184, 0, 0.2)',
+                                borderWidth: 3,
+                                pointBackgroundColor: '#FFB800',
+                                tension: 0.3,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 10, family: 'Plus Jakarta Sans' }, boxWidth: 12 } }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } } },
+                            y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } } }
+                        }
+                    }
+                });
+            }
+
+            // Chart 2: Expense Allocation Doughnut Chart
+            const expCatMap = {};
+            expenses.forEach(e => {
+                const cat = e.category || 'Misc';
+                expCatMap[cat] = (expCatMap[cat] || 0) + (parseFloat(e.amount) || 0);
+            });
+            const expLabels = Object.keys(expCatMap);
+            const expData = Object.values(expCatMap);
+            const palette = ['#006A4E', '#D9232E', '#FFB800', '#4F46E5', '#0284C7', '#059669', '#D97706', '#9333EA', '#DC2626', '#475569'];
+
+            const ctx2 = document.getElementById('chart-expense-category')?.getContext('2d');
+            if (ctx2) {
+                if (window.chartInstances.expenseCategory) window.chartInstances.expenseCategory.destroy();
+                window.chartInstances.expenseCategory = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: expLabels.length > 0 ? expLabels : ['No Expenses'],
+                        datasets: [{
+                            data: expData.length > 0 ? expData : [1],
+                            backgroundColor: expData.length > 0 ? palette.slice(0, expLabels.length) : ['#CBD5E1'],
+                            borderWidth: 2,
+                            borderColor: '#FFFFFF'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'right', labels: { font: { size: 10, family: 'Plus Jakarta Sans' }, boxWidth: 10 } }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            // Chart 3: Revenue Streams Breakdown (Fee Types Bar Chart)
+            const feeTypeMap = {};
+            transactions.forEach(t => {
+                const type = t.type || 'Other';
+                feeTypeMap[type] = (feeTypeMap[type] || 0) + (parseFloat(t.amount) || 0);
+            });
+            const feeLabels = Object.keys(feeTypeMap);
+            const feeData = Object.values(feeTypeMap);
+
+            const ctx3 = document.getElementById('chart-fee-types')?.getContext('2d');
+            if (ctx3) {
+                if (window.chartInstances.feeTypes) window.chartInstances.feeTypes.destroy();
+                window.chartInstances.feeTypes = new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: feeLabels.length > 0 ? feeLabels : ['No Fees'],
+                        datasets: [{
+                            label: 'Fee Amount ($)',
+                            data: feeData.length > 0 ? feeData : [0],
+                            backgroundColor: ['#0284C7', '#006A4E', '#FFB800', '#9333EA', '#059669'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } } },
+                            y: { grid: { display: false }, ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } } }
+                        }
+                    }
+                });
+            }
+
+            // Chart 4: Cumulative Net Reserve Growth Line Chart
+            const ctx4 = document.getElementById('chart-net-reserve')?.getContext('2d');
+            if (ctx4) {
+                if (window.chartInstances.netReserve) window.chartInstances.netReserve.destroy();
+                window.chartInstances.netReserve = new Chart(ctx4, {
+                    type: 'line',
+                    data: {
+                        labels: monthLabels,
+                        datasets: [{
+                            label: 'Cumulative Reserve ($)',
+                            data: cumulativeReserve,
+                            borderColor: '#006A4E',
+                            backgroundColor: 'rgba(0, 106, 78, 0.15)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#006A4E'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top', labels: { font: { size: 10, family: 'Plus Jakarta Sans' }, boxWidth: 10 } }
+                        },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } } },
+                            y: { grid: { color: '#F1F5F9' }, ticks: { font: { size: 10, family: 'Plus Jakarta Sans' } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function printFinancialStatement() {
+            const printContent = document.getElementById('printable-financial-statement')?.outerHTML;
+            if (!printContent) return;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <title>Financial Statement - Eureka Red Green Primary School</title>
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+                        <style>
+                            body { font-family: 'Plus Jakarta Sans', sans-serif; padding: 20px; }
+                        </style>
+                    </head>
+                    <body>
+                        ${printContent}
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                try {
+                    printWindow.print();
+                    printWindow.close();
+                } catch(e) {}
+            }, 500);
+        }
+
+        function calculateStudentRankings() {
+            const students = window.appData.students || [];
+            const grades = window.appData.grades || [];
+
+            const studentStats = students.map(s => {
+                const myGrades = grades.filter(g => g.studentId === s.id);
+                if (myGrades.length === 0) {
+                    return { studentId: s.id, average: -1, count: 0 };
+                }
+                const sum = myGrades.reduce((acc, curr) => acc + (parseFloat(curr.score) || 0), 0);
+                const average = sum / myGrades.length;
+                return { studentId: s.id, average, count: myGrades.length };
+            });
+
+            const rankedList = [...studentStats].filter(s => s.average >= 0).sort((a, b) => b.average - a.average);
+            const rankMap = {};
+            rankedList.forEach((st, idx) => {
+                rankMap[st.studentId] = idx + 1;
+            });
+
+            return { rankMap, studentStats, totalRanked: rankedList.length };
+        }
+
+        function getExpenseIcon(category) {
+            switch (category) {
+                case "House Rent": return { icon: "fa-house", color: "text-indigo-600 bg-indigo-100" };
+                case "Transport Rent": return { icon: "fa-bus", color: "text-blue-600 bg-blue-100" };
+                case "Water Bill": return { icon: "fa-droplet", color: "text-cyan-600 bg-cyan-100" };
+                case "Gas Bill": return { icon: "fa-fire-flame-simple", color: "text-orange-600 bg-orange-100" };
+                case "Electricity Bill": return { icon: "fa-bolt", color: "text-amber-600 bg-amber-100" };
+                case "Entertainment Expenses": return { icon: "fa-film", color: "text-purple-600 bg-purple-100" };
+                case "Snacks Bill": return { icon: "fa-cookie-bite", color: "text-yellow-600 bg-yellow-100" };
+                case "Stationary Purchase Cost": return { icon: "fa-pen-ruler", color: "text-emerald-600 bg-emerald-100" };
+                case "Printing Cost": return { icon: "fa-print", color: "text-teal-600 bg-teal-100" };
+                case "Conveyance Bill": return { icon: "fa-car", color: "text-sky-600 bg-sky-100" };
+                case "Repair and Maintainence Bill": return { icon: "fa-wrench", color: "text-stone-600 bg-stone-200" };
+                case "Tax": return { icon: "fa-building-columns", color: "text-red-700 bg-red-100" };
+                case "VAT": return { icon: "fa-percent", color: "text-rose-600 bg-rose-100" };
+                case "Govt Fees": return { icon: "fa-landmark", color: "text-slate-700 bg-slate-200" };
+                default: return { icon: "fa-receipt", color: "text-slate-600 bg-slate-100" };
+            }
+        }
+
+        function renderAllData() {
+            const data = window.appData;
+
+            document.getElementById('stat-students').innerText = data.students.length;
+            document.getElementById('stat-teachers').innerText = data.staff.length;
+            
+            const totalCollected = (data.transactions || []).reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+            document.getElementById('stat-fees').innerText = `$${totalCollected}`;
+
+            const totalSpent = (data.expenses || []).reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+            document.getElementById('stat-expenses').innerText = `$${totalSpent}`;
+
+            renderStudentsDirectory();
+
+            const studentOptions = data.students.map(s => `<option value="${s.id}">${s.name} (${s.grade})</option>`).join('');
+            document.getElementById('feeStudentSelect').innerHTML = studentOptions;
+            document.getElementById('gradeStudentSelect').innerHTML = studentOptions;
+            document.getElementById('studentPortalSelector').innerHTML = studentOptions;
+            if (window.activeStudentId) {
+                document.getElementById('studentPortalSelector').value = window.activeStudentId;
+            }
+
+            const staffList = document.getElementById('staffListContainer');
+            staffList.innerHTML = data.staff.map(st => `
+                <div class="p-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-red-100 text-eureka-red flex items-center justify-center font-bold text-xs">
+                            ${st.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="font-bold text-xs text-slate-800">${st.name}</p>
+                            <p class="text-[10px] text-slate-400">${st.role} • 📅 Joined: ${st.joiningDate || '2023-01-15'}${st.leavingDate ? ` | 🚪 Left: ${st.leavingDate}` : ''}</p>
+                        </div>
+                    </div>
+                    <a href="tel:${st.phone}" class="w-8 h-8 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center text-xs hover:bg-emerald-100 hover:text-eureka-green touch-active"><i class="fa-solid fa-phone"></i></a>
+                </div>
+            `).join('');
+
+            renderFeeHistory();
+            renderExpenseHistory();
+
+            const finTab = document.getElementById('admin-tab-financial-statement');
+            if (finTab && !finTab.classList.contains('hidden')) {
+                renderFinancialStatementPage();
+            }
+
+            const attendanceContainer = document.getElementById('attendanceList');
+            attendanceContainer.innerHTML = data.students.map(s => `
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                    <span class="text-xs font-semibold text-slate-700">${s.name} (${s.grade})</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" onchange="toggleAttendance(${s.id}, this.checked)" class="sr-only peer" checked>
+                        <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-eureka-green"></div>
+                    </label>
+                </div>
+            `).join('');
+
+            const bulletin = document.getElementById('bulletinList');
+            bulletin.innerHTML = data.notices.map(n => `
+                <div class="p-3 bg-red-50/50 border border-red-100 rounded-xl space-y-1">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-xs text-eureka-red">${n.title}</h4>
+                        <span class="text-[9px] text-slate-400 font-medium">${n.date}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 leading-snug">${n.content}</p>
+                </div>
+            `).join('');
+
+            if (window.activeStudentId) {
+                renderStudentPortalView(window.activeStudentId);
+            }
+        }
+
+        function renderFeeHistory() {
+            const filterDate = document.getElementById('feeDateFilter')?.value || '';
+            let list = [...(window.appData.transactions || [])];
+
+            if (filterDate) {
+                list = list.filter(t => t.date === filterDate);
+            }
+
+            const totalFiltered = list.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+            const totalAll = (window.appData.transactions || []).reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+            const summaryEl = document.getElementById('feeHistorySummary');
+            if (summaryEl) {
+                summaryEl.innerText = filterDate 
+                    ? `Calendar Date (${filterDate}): $${totalFiltered}` 
+                    : `Showing all ${(window.appData.transactions || []).length} receipts ($${totalAll})`;
+            }
+
+            const container = document.getElementById('feeHistoryContainer');
+            if (!container) return;
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="p-4 text-xs text-center text-slate-400">No fee collections found for the selected calendar date.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(t => `
+                <div class="flex justify-between items-center py-2.5 px-1">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-eureka-green flex items-center justify-center font-bold text-xs shrink-0">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-xs">${t.studentName}</p>
+                            <p class="text-[10px] text-slate-400">${t.type} Fee • 📅 ${t.date}</p>
+                        </div>
+                    </div>
+                    <span class="font-extrabold text-eureka-green text-xs">+$${t.amount}</span>
+                </div>
+            `).join('');
+        }
+
+        function clearFeeDateFilter() {
+            const dateEl = document.getElementById('feeDateFilter');
+            if (dateEl) dateEl.value = '';
+            renderFeeHistory();
+        }
+
+        function renderExpenseHistory() {
+            const filterDate = document.getElementById('expenseDateFilter')?.value || '';
+            const filterCat = document.getElementById('expenseCategoryFilter')?.value || 'ALL';
+            let list = [...(window.appData.expenses || [])];
+
+            if (filterDate) {
+                list = list.filter(e => e.date === filterDate);
+            }
+            if (filterCat !== 'ALL') {
+                list = list.filter(e => e.category === filterCat);
+            }
+
+            const totalFiltered = list.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+            const totalAll = (window.appData.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+            const summaryEl = document.getElementById('expenseHistorySummary');
+            if (summaryEl) {
+                summaryEl.innerText = (filterDate || filterCat !== 'ALL')
+                    ? `Filtered Calendar Spent: $${totalFiltered}`
+                    : `Showing all ${(window.appData.expenses || []).length} vouchers ($${totalAll})`;
+            }
+
+            const container = document.getElementById('expenseHistoryContainer');
+            if (!container) return;
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="p-4 text-xs text-center text-slate-400">No expense records found for the selected calendar date or category.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(e => {
+                const style = getExpenseIcon(e.category);
+                return `
+                <div class="flex justify-between items-center py-2.5 px-1">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl ${style.color} flex items-center justify-center font-bold text-xs shrink-0">
+                            <i class="fa-solid ${style.icon}"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 text-xs">${e.category}</p>
+                            <p class="text-[10px] text-slate-400">${e.notes ? e.notes + ' • ' : ''}📅 ${e.date}</p>
+                        </div>
+                    </div>
+                    <span class="font-extrabold text-eureka-red text-xs">-$${e.amount}</span>
+                </div>
+            `}).join('');
+        }
+
+        function clearExpenseFilters() {
+            const dEl = document.getElementById('expenseDateFilter');
+            if (dEl) dEl.value = '';
+            const cEl = document.getElementById('expenseCategoryFilter');
+            if (cEl) cEl.value = 'ALL';
+            renderExpenseHistory();
+        }
+
+        function renderStudentsDirectory() {
+            const searchVal = (document.getElementById('searchStudentInput')?.value || '').toLowerCase();
+            const gradeFilter = document.getElementById('filterGradeSelect')?.value || 'ALL';
+            const sortVal = document.getElementById('sortStudentSelect')?.value || 'name_asc';
+
+            const { rankMap, studentStats } = calculateStudentRankings();
+            const statLookup = {};
+            studentStats.forEach(st => statLookup[st.studentId] = st.average);
+
+            let list = [...window.appData.students];
+
+            if (searchVal) {
+                list = list.filter(s => s.name.toLowerCase().includes(searchVal) || s.id.toString().includes(searchVal));
+            }
+
+            if (gradeFilter !== 'ALL') {
+                list = list.filter(s => s.grade === gradeFilter);
+            }
+
+            if (sortVal === 'name_asc') {
+                list.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortVal === 'rank') {
+                list.sort((a, b) => {
+                    const avgA = statLookup[a.id] !== undefined ? statLookup[a.id] : -1;
+                    const avgB = statLookup[b.id] !== undefined ? statLookup[b.id] : -1;
+                    return avgB - avgA;
+                });
+            } else if (sortVal === 'id_asc') {
+                list.sort((a, b) => a.id - b.id);
+            } else if (sortVal === 'status') {
+                list.sort((a, b) => a.status.localeCompare(b.status));
+            }
+
+            const container = document.getElementById('studentListContainer');
+            if (list.length === 0) {
+                container.innerHTML = `<p class="p-4 text-xs text-center text-slate-400">No student records match filters.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map(s => {
+                const rankNum = rankMap[s.id];
+                const rankDisplay = rankNum ? `Rank #${rankNum}` : 'No Grades';
+
+                return `
+                <div onclick="openStudentPortfolio(${s.id})" class="p-3 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer touch-active group">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-eureka-green flex items-center justify-center font-bold text-xs group-hover:bg-eureka-green group-hover:text-white transition shrink-0">
+                            ${s.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="font-bold text-xs text-slate-800 group-hover:text-eureka-green transition">${s.name}</p>
+                            <p class="text-[10px] text-slate-400">${s.grade} | Roll #${s.id} • 📅 Joined: ${s.joiningDate || '2024-01-10'}${s.leavingDate ? ` | 🚪 Left: ${s.leavingDate}` : ''}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[9px] px-2 py-0.5 rounded-full font-bold bg-amber-100 text-amber-800">
+                            ${rankDisplay}
+                        </span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${s.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                            ${s.status}
+                        </span>
+                        <a href="tel:${s.guardian}" onclick="event.stopPropagation()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs"><i class="fa-solid fa-phone text-[10px]"></i></a>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        function openStudentPortfolio(studentId) {
+            window.selectedPortfolioStudentId = studentId;
+            const student = window.appData.students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('modalStudentName').innerText = student.name;
+            document.getElementById('modalStudentSub').innerText = `${student.grade} | Roll #${student.id}`;
+            document.getElementById('modalStudentAvatar').innerText = student.name.charAt(0);
+            document.getElementById('modalStudentGuardian').href = `tel:${student.guardian}`;
+            document.getElementById('modalStudentGuardian').querySelector('span').innerText = student.guardian;
+            document.getElementById('modalStudentFees').innerText = `$${student.feesPaid}`;
+            document.getElementById('modalStudentDates').innerHTML = `Joined: <b>${student.joiningDate || '2024-01-10'}</b><br>Left: <b>${student.leavingDate || 'Active'}</b>`;
+
+            const total = student.totalDays || 20;
+            const attended = student.attendedDays || 0;
+            const attRate = Math.round((attended / total) * 100);
+            document.getElementById('modalStudentAttBadge').innerText = `${attRate}%`;
+            document.getElementById('modalStudentAttDetail').innerText = `${attended} out of ${total} days attended`;
+
+            const studentGrades = window.appData.grades.filter(g => g.studentId === studentId);
+            const { rankMap } = calculateStudentRankings();
+            const rankNum = rankMap[studentId];
+            document.getElementById('modalStudentRankBadge').innerText = rankNum ? `Rank #${rankNum}` : 'No Class Rank';
+
+            const gradesContainer = document.getElementById('modalStudentGrades');
+            if (studentGrades.length === 0) {
+                gradesContainer.innerHTML = `<p class="text-xs text-slate-400 py-2 text-center">No examination scores recorded yet.</p>`;
+            } else {
+                gradesContainer.innerHTML = studentGrades.map(g => `
+                    <div class="py-2 flex justify-between items-center text-xs">
+                        <div>
+                            <p class="font-bold text-slate-800">${g.subject}</p>
+                            <p class="text-[10px] text-slate-400">${g.term}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-extrabold text-eureka-green">${g.score}%</span>
+                            <span class="text-[9px] block font-bold ${g.score >= 80 ? 'text-emerald-600' : 'text-amber-600'}">${g.score >= 80 ? 'Grade A' : 'Grade B'}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            toggleModal('modal-student-portfolio', true);
+        }
+
+        function quickCollectFeeForStudent() {
+            if (!window.selectedPortfolioStudentId) return;
+            toggleModal('modal-student-portfolio', false);
+            switchAdminTab('fees');
+            document.getElementById('feeStudentSelect').value = window.selectedPortfolioStudentId;
+        }
+
+        function switchStudentPortal(studentId) {
+            window.activeStudentId = parseInt(studentId);
+            renderStudentPortalView(window.activeStudentId);
+        }
+
+        function renderStudentPortalView(studentId) {
+            const student = window.appData.students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('studentProfileName').innerText = student.name;
+            document.getElementById('studentProfileDetails').innerText = `Roll No: #${student.id} | ${student.grade} • Joined: ${student.joiningDate || '2024-01-10'}`;
+            document.getElementById('studentAvatar').innerText = student.name.charAt(0);
+            document.getElementById('studentProfileBadge').innerText = `Status: ${student.status}`;
+
+            const total = student.totalDays || 20;
+            const attended = student.attendedDays || 0;
+            const attPercent = ((attended / total) * 100).toFixed(1);
+            document.getElementById('studentAttendanceStat').innerText = `${attPercent}%`;
+            document.getElementById('studentAttendanceDetail').innerText = `${attended}/${total} Days Attended`;
+
+            const studentGrades = window.appData.grades.filter(g => g.studentId === studentId);
+            const gradesContainer = document.getElementById('studentGradesList');
+
+            const { rankMap, totalRanked } = calculateStudentRankings();
+            const rankNum = rankMap[studentId];
+
+            if (studentGrades.length === 0) {
+                document.getElementById('studentAvgGrade').innerText = "N/A";
+                document.getElementById('studentGradeRank').innerText = "Pending Exam Results";
+                gradesContainer.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">No grades published for this term yet.</p>`;
+            } else {
+                const totalScore = studentGrades.reduce((sum, g) => sum + (parseFloat(g.score) || 0), 0);
+                const avgScore = (totalScore / studentGrades.length).toFixed(1);
+                document.getElementById('studentAvgGrade').innerText = `${avgScore}%`;
+                
+                document.getElementById('studentGradeRank').innerText = rankNum ? `Rank #${rankNum} of ${totalRanked} Students` : "Pending Class Ranking";
+
+                gradesContainer.innerHTML = studentGrades.map(g => `
+                    <div class="pt-2 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-xs text-slate-800">${g.subject}</p>
+                            <p class="text-[10px] text-slate-400">${g.term}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-extrabold text-sm text-eureka-green">${g.score}%</span>
+                            <p class="text-[9px] font-bold ${g.score >= 80 ? 'text-emerald-600' : 'text-amber-600'}">${g.score >= 80 ? 'Grade A' : 'Grade B'}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            const feeHistoryContainer = document.getElementById('studentFeeHistory');
+            const myTx = window.appData.transactions.filter(t => t.studentName === student.name || t.studentId === student.id);
+            if(myTx.length === 0) {
+                feeHistoryContainer.innerHTML = `<p class="text-slate-400 text-center py-2">No payment transactions recorded.</p>`;
+            } else {
+                feeHistoryContainer.innerHTML = myTx.map(t => `
+                    <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl">
+                        <div>
+                            <span class="font-bold text-slate-700">${t.type} Fee</span>
+                            <p class="text-[10px] text-slate-400">📅 ${t.date}</p>
+                        </div>
+                        <span class="font-extrabold text-emerald-700">+$${t.amount} (Paid)</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function handleAddStudent(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('newStudentName');
+            const gradeInput = document.getElementById('newStudentGrade');
+            const guardianInput = document.getElementById('newStudentContact');
+            const joiningInput = document.getElementById('newStudentJoiningDate');
+            const leavingInput = document.getElementById('newStudentLeavingDate');
+
+            const name = nameInput ? nameInput.value.trim() : '';
+            const grade = gradeInput ? gradeInput.value : 'Grade 1';
+            const guardian = guardianInput ? guardianInput.value.trim() : '';
+            const joiningDate = joiningInput && joiningInput.value ? joiningInput.value : new Date().toISOString().split('T')[0];
+            const leavingDate = leavingInput && leavingInput.value ? leavingInput.value : '';
+
+            if (!name || !guardian) return;
+
+            const maxId = (window.appData.students || []).reduce((max, s) => Math.max(max, Number(s.id) || 0), 100);
+            const newId = maxId + 1;
+            const payload = { id: newId, name, grade, guardian, status: "Active", feesPaid: 0, attendedDays: 20, totalDays: 20, joiningDate, leavingDate };
+
+            await window.saveToCloud('students', payload);
+            toggleModal('modal-add-student', false);
+            showToast(`Enrolled ${name} successfully!`);
+            e.target.reset();
+            if (joiningInput) joiningInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        async function handleAddStaff(e) {
+            e.preventDefault();
+            const name = document.getElementById('newStaffName').value.trim();
+            const role = document.getElementById('newStaffRole').value;
+            const phone = document.getElementById('newStaffPhone').value.trim();
+            const joiningInput = document.getElementById('newStaffJoiningDate');
+            const leavingInput = document.getElementById('newStaffLeavingDate');
+            const joiningDate = joiningInput && joiningInput.value ? joiningInput.value : new Date().toISOString().split('T')[0];
+            const leavingDate = leavingInput && leavingInput.value ? leavingInput.value : '';
+
+            if (!name || !phone) return;
+
+            const payload = { id: window.appData.staff.length + 1, name, role, phone, joiningDate, leavingDate };
+            await window.saveToCloud('staff', payload);
+
+            toggleModal('modal-add-staff', false);
+            showToast(`Registered ${name} to staff!`);
+            e.target.reset();
+            if (joiningInput) joiningInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        async function handleFeePayment(e) {
+            e.preventDefault();
+            const studentId = parseInt(document.getElementById('feeStudentSelect').value);
+            const amount = parseFloat(document.getElementById('feeAmount').value);
+            const type = document.getElementById('feeType').value;
+            const dateInput = document.getElementById('feeDate');
+            const date = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+
+            const student = window.appData.students.find(s => s.id === studentId);
+            if (student) {
+                const newFeesPaid = (student.feesPaid || 0) + amount;
+                student.feesPaid = newFeesPaid;
+                student.status = "Active";
+
+                if (student.docId && window.db) {
+                    await window.updateStudentCloud(student.docId, { feesPaid: newFeesPaid, status: "Active" });
+                }
+
+                await window.saveToCloud('transactions', {
+                    studentName: student.name,
+                    studentId: student.id,
+                    amount,
+                    type,
+                    date
+                });
+
+                showToast(`Fee payment recorded for ${student.name}`);
+                e.target.reset();
+                if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        async function handleExpenseSubmit(e) {
+            e.preventDefault();
+            const category = document.getElementById('expenseCategory').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const dateInput = document.getElementById('expenseDate');
+            const date = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+            const notes = (document.getElementById('expenseNotes').value || '').trim();
+
+            if (!amount || amount <= 0) return;
+
+            const payload = { category, amount, date, notes };
+            await window.saveToCloud('expenses', payload);
+            showToast(`Recorded expense: ${category} ($${amount})`);
+            e.target.reset();
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        async function handlePostNotice(e) {
+            e.preventDefault();
+            const title = document.getElementById('noticeTitle').value;
+            const content = document.getElementById('noticeContent').value;
+
+            await window.saveToCloud('notices', {
+                title,
+                content,
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            });
+
+            showToast("Broadcasted notice to mobile users!");
+            e.target.reset();
+        }
+
+        async function handleGradeSubmit(e) {
+            e.preventDefault();
+            const studentId = parseInt(document.getElementById('gradeStudentSelect').value);
+            const subject = document.getElementById('gradeSubject').value;
+            const score = parseInt(document.getElementById('gradeScore').value);
+            const term = document.getElementById('gradeTerm').value;
+
+            await window.saveToCloud('grades', { studentId, subject, score, term });
+            showToast("Grade saved & rankings updated!");
+            e.target.reset();
+        }
+
+        function toggleAttendance(studentId, isPresent) {
+            window.appData.attendance[studentId] = isPresent;
+            if (typeof window.saveLocalState === 'function') window.saveLocalState();
+        }
+
+        function saveAttendance() {
+            if (typeof window.saveLocalState === 'function') window.saveLocalState();
+            showToast("Daily attendance roll call saved!");
+        }
+
+        function exportDataBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `eureka_school_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Downloaded database backup!");
+        }
+
+        function importDataBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && imported.students) {
+                        window.appData = imported;
+                        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                        renderAllData();
+                        toggleModal('modal-database-management', false);
+                        showToast("Database backup imported successfully!");
+                    } else {
+                        alert("Invalid backup file format.");
+                    }
+                } catch (err) {
+                    alert("Error parsing backup file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function refreshAndPersistDatabase() {
+            try {
+                if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                const res = await fetch('http://localhost:3000/api/data');
+                if (res.ok) {
+                    const remote = await res.json();
+                    if (remote && remote.students) {
+                        window.appData = remote;
+                        if (typeof window.saveLocalState === 'function') window.saveLocalState();
+                    }
+                }
+            } catch (err) {
+                console.log("Local database updated & saved");
+            }
+
+            const syncEl = document.getElementById('syncText');
+            if (syncEl) syncEl.innerText = "Latest DB Synced";
+
+            if (typeof window.renderAllData === 'function') window.renderAllData();
+            showToast("🔄 Database updated & latest data persisted!");
+        }
+
+        function resetToDefaultData() {
+            if (confirm("Are you sure you want to reset database to initial seed data? All custom entries will be restored to default sample dataset.")) {
+                localStorage.removeItem('eureka_school_app_data_v2');
+                location.reload();
+            }
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const pwdInput = document.getElementById('adminPasswordInput');
+            const errorEl = document.getElementById('adminLoginError');
+            const enteredPwd = pwdInput ? pwdInput.value.trim() : '';
+            const validPwd = (window.appData && window.appData.adminPassword) || 'admin123';
+
+            if (enteredPwd === validPwd) {
+                window.isAdminAuthenticated = true;
+                sessionStorage.setItem('eureka_admin_authed', 'true');
+                toggleModal('modal-admin-login', false);
+                if (errorEl) errorEl.classList.add('hidden');
+                showToast("🔓 Admin Portal unlocked successfully!");
+                switchRole('admin');
+            } else {
+                if (errorEl) errorEl.classList.remove('hidden');
+            }
+        }
+
+        function cancelAdminLogin() {
+            toggleModal('modal-admin-login', false);
+            const errEl = document.getElementById('adminLoginError');
+            if (errEl) errEl.classList.add('hidden');
+            document.getElementById('roleSelector').value = window.currentRole && window.currentRole !== 'admin' ? window.currentRole : 'student';
+        }
+
+        function handleAdminLogout() {
+            window.isAdminAuthenticated = false;
+            sessionStorage.removeItem('eureka_admin_authed');
+            const logoutBtn = document.getElementById('adminLogoutBtn');
+            if (logoutBtn) logoutBtn.classList.add('hidden');
+            showToast("🔒 Logged out of Admin Portal");
+            switchRole('student');
+        }
+
+        function changeAdminPassword() {
+            const input = document.getElementById('changeAdminPasswordInput');
+            const newPwd = input ? input.value.trim() : '';
+
+            if (!newPwd) {
+                alert("Please enter a valid password.");
+                return;
+            }
+
+            if (!window.appData) window.appData = {};
+            window.appData.adminPassword = newPwd;
+            if (typeof window.saveLocalState === 'function') window.saveLocalState();
+            input.value = '';
+            showToast("🔑 Admin password updated successfully!");
+        }
+
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash text-xs';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye text-xs';
+            }
+        }
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if (show) modal.classList.remove('hidden');
+            else modal.classList.add('hidden');
+        }
+
+        function dismissBanner() {
+            document.getElementById('pwaBanner').style.display = 'none';
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        window.switchRole = switchRole;
+        window.switchAdminTab = switchAdminTab;
+        window.renderStudentsDirectory = renderStudentsDirectory;
+        window.openStudentPortfolio = openStudentPortfolio;
+        window.quickCollectFeeForStudent = quickCollectFeeForStudent;
+        window.switchStudentPortal = switchStudentPortal;
+        window.handleAddStudent = handleAddStudent;
+        window.handleAddStaff = handleAddStaff;
+        window.handleFeePayment = handleFeePayment;
+        window.handleExpenseSubmit = handleExpenseSubmit;
+        window.renderFeeHistory = renderFeeHistory;
+        window.clearFeeDateFilter = clearFeeDateFilter;
+        window.renderExpenseHistory = renderExpenseHistory;
+        window.clearExpenseFilters = clearExpenseFilters;
+        window.handlePostNotice = handlePostNotice;
+        window.handleGradeSubmit = handleGradeSubmit;
+        window.toggleAttendance = toggleAttendance;
+        window.saveAttendance = saveAttendance;
+        window.refreshAndPersistDatabase = refreshAndPersistDatabase;
+        window.exportDataBackup = exportDataBackup;
+        window.importDataBackup = importDataBackup;
+        window.resetToDefaultData = resetToDefaultData;
+        window.handleAdminLogin = handleAdminLogin;
+        window.cancelAdminLogin = cancelAdminLogin;
+        window.handleAdminLogout = handleAdminLogout;
+        window.changeAdminPassword = changeAdminPassword;
+        window.togglePasswordVisibility = togglePasswordVisibility;
+        window.renderFinancialStatementPage = renderFinancialStatementPage;
+        window.printFinancialStatement = printFinancialStatement;
+        window.toggleModal = toggleModal;
+        window.dismissBanner = dismissBanner;
+    </script>
+</body>
+</html>

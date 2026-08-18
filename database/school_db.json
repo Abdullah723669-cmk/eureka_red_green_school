@@ -1,0 +1,550 @@
+{
+  "students": [
+    {
+      "id": 106,
+      "name": "Abdullah",
+      "grade": "Grade 2",
+      "guardian": "01711223344",
+      "status": "Active",
+      "feesPaid": 1220,
+      "attendedDays": 19,
+      "totalDays": 20,
+      "joiningDate": "2024-01-10",
+      "leavingDate": ""
+    },
+    {
+      "id": 102,
+      "name": "Tarik Hasan",
+      "grade": "Grade 3",
+      "guardian": "01811223344",
+      "status": "Active",
+      "feesPaid": 900,
+      "attendedDays": 18,
+      "totalDays": 20,
+      "joiningDate": "2024-01-10",
+      "leavingDate": ""
+    },
+    {
+      "id": 103,
+      "name": "Zubair Ahmed",
+      "grade": "Grade 1",
+      "guardian": "01911223344",
+      "status": "Active",
+      "feesPaid": 270,
+      "attendedDays": 16,
+      "totalDays": 20,
+      "joiningDate": "2024-01-10",
+      "leavingDate": ""
+    },
+    {
+      "id": 104,
+      "name": "Nabila Chowdhury",
+      "grade": "Grade 2",
+      "guardian": "01511223344",
+      "status": "Active",
+      "feesPaid": 420,
+      "attendedDays": 20,
+      "totalDays": 20,
+      "joiningDate": "2024-01-10",
+      "leavingDate": ""
+    },
+    {
+      "id": 107,
+      "name": "Faiza Binte Mamun",
+      "grade": "Grade 4",
+      "guardian": "01712659874",
+      "status": "Active",
+      "feesPaid": 150,
+      "attendedDays": 20,
+      "totalDays": 20,
+      "joiningDate": "2024-01-10",
+      "leavingDate": ""
+    },
+    {
+      "id": 108,
+      "name": "Sadman Ibne Alam",
+      "grade": "Grade 5",
+      "guardian": "01715380752",
+      "status": "Active",
+      "feesPaid": 700,
+      "attendedDays": 20,
+      "totalDays": 20,
+      "joiningDate": "2026-08-18",
+      "leavingDate": ""
+    },
+    {
+      "id": 109,
+      "name": "Samia Nowsin",
+      "grade": "Grade 4",
+      "guardian": "01834659874",
+      "status": "Active",
+      "feesPaid": 700,
+      "attendedDays": 20,
+      "totalDays": 20,
+      "joiningDate": "2026-08-18",
+      "leavingDate": ""
+    },
+    {
+      "id": 110,
+      "name": "Neon Rana",
+      "grade": "Grade 3",
+      "guardian": "01715380752",
+      "status": "Active",
+      "feesPaid": 150,
+      "attendedDays": 20,
+      "totalDays": 20,
+      "joiningDate": "2026-08-18",
+      "leavingDate": ""
+    }
+  ],
+  "staff": [
+    {
+      "id": 1,
+      "name": "Rashid Khan",
+      "role": "Class Teacher (Grade 2)",
+      "phone": "01700112233",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 2,
+      "name": "Nusrat Jahan",
+      "role": "Math Specialist",
+      "phone": "01800112233",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 3,
+      "name": "Kamal Hossain",
+      "role": "Support & Maintenance",
+      "phone": "01900112233",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 4,
+      "name": "Saiful Islam",
+      "role": "Teacher",
+      "phone": "01715426152",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 5,
+      "name": "Masudur Rahman",
+      "role": "Accountant",
+      "phone": "01825465215",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 6,
+      "name": "Safikul Islam Sumon",
+      "role": "Administrator",
+      "phone": "01914232102",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 7,
+      "name": "Mohona Nowsin",
+      "role": "Teacher",
+      "phone": "01840253614",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 8,
+      "name": "Sarah Jaker",
+      "role": "Teacher",
+      "phone": "01752365897",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    },
+    {
+      "id": 9,
+      "name": "Ismail Hossain",
+      "role": "Teacher",
+      "phone": "01632564125",
+      "joiningDate": "2023-01-15",
+      "leavingDate": ""
+    }
+  ],
+  "grades": [
+    {
+      "studentId": 106,
+      "subject": "Mathematics",
+      "score": 92,
+      "term": "Mid Term 1"
+    },
+    {
+      "studentId": 106,
+      "subject": "English",
+      "score": 85,
+      "term": "Mid Term 1"
+    },
+    {
+      "studentId": 106,
+      "subject": "Science",
+      "score": 88,
+      "term": "Mid Term 1"
+    },
+    {
+      "studentId": 102,
+      "subject": "Mathematics",
+      "score": 78,
+      "term": "Mid Term 1"
+    },
+    {
+      "studentId": 102,
+      "subject": "English",
+      "score": 82,
+      "term": "Mid Term 1"
+    },
+    {
+      "studentId": 102,
+      "subject": "Science",
+      "score": 80,
+      "term": "Mid Term 1"
+    }
+  ],
+  "transactions": [
+    {
+      "studentName": "Sadman Ibne Alam",
+      "studentId": 108,
+      "amount": 550,
+      "type": "Tuition",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Samia Nowsin",
+      "studentId": 109,
+      "amount": 550,
+      "type": "Tuition",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Tarik Hasan",
+      "studentId": 102,
+      "amount": 550,
+      "type": "Books & Uniform",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Abdullah",
+      "studentId": 106,
+      "amount": 550,
+      "type": "Books & Uniform",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Neon Rana",
+      "studentId": 110,
+      "amount": 150,
+      "type": "Tuition",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Nabila Chowdhury",
+      "studentId": 104,
+      "amount": 120,
+      "type": "Transport",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Zubair Ahmed",
+      "studentId": 103,
+      "amount": 120,
+      "type": "Transport",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Abdullah",
+      "studentId": 106,
+      "amount": 120,
+      "type": "Transport",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Samia Nowsin",
+      "studentId": 109,
+      "amount": 150,
+      "type": "Tuition",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Sadman Ibne Alam",
+      "studentId": 108,
+      "amount": 150,
+      "type": "Tuition",
+      "date": "2026-08-18"
+    },
+    {
+      "studentName": "Abdullah",
+      "studentId": 106,
+      "amount": 250,
+      "type": "Books & Uniform",
+      "date": "2026-08-18"
+    },
+    {
+      "id": 1001,
+      "studentId": 106,
+      "studentName": "Abdullah",
+      "type": "Admission",
+      "amount": 250,
+      "date": "2026-05-05",
+      "notes": "New Enrollment Fee"
+    },
+    {
+      "id": 1002,
+      "studentId": 102,
+      "studentName": "Tarik Hasan",
+      "type": "Tuition",
+      "amount": 200,
+      "date": "2026-05-10",
+      "notes": "May Monthly Fee"
+    },
+    {
+      "id": 1003,
+      "studentId": 104,
+      "studentName": "Nabila Chowdhury",
+      "type": "Examination",
+      "amount": 80,
+      "date": "2026-05-15",
+      "notes": "Term 1 Exam Fee"
+    },
+    {
+      "id": 1004,
+      "studentId": 106,
+      "studentName": "Abdullah",
+      "type": "Tuition",
+      "amount": 150,
+      "date": "2026-06-02",
+      "notes": "June Monthly Fee"
+    },
+    {
+      "id": 1005,
+      "studentId": 102,
+      "studentName": "Tarik Hasan",
+      "type": "Tuition",
+      "amount": 200,
+      "date": "2026-06-05",
+      "notes": "June Monthly Fee"
+    },
+    {
+      "id": 1006,
+      "studentId": 103,
+      "studentName": "Zubair Ahmed",
+      "type": "Session",
+      "amount": 300,
+      "date": "2026-06-12",
+      "notes": "Annual Session Fee"
+    },
+    {
+      "id": 1007,
+      "studentId": 104,
+      "studentName": "Nabila Chowdhury",
+      "type": "Tuition",
+      "amount": 150,
+      "date": "2026-06-18",
+      "notes": "June Monthly Fee"
+    },
+    {
+      "id": 1008,
+      "studentId": 106,
+      "studentName": "Abdullah",
+      "type": "Tuition",
+      "amount": 150,
+      "date": "2026-07-04",
+      "notes": "July Monthly Fee"
+    },
+    {
+      "id": 1009,
+      "studentId": 102,
+      "studentName": "Tarik Hasan",
+      "type": "Tuition",
+      "amount": 200,
+      "date": "2026-07-08",
+      "notes": "July Monthly Fee"
+    },
+    {
+      "id": 1010,
+      "studentId": 106,
+      "studentName": "Abdullah",
+      "type": "Examination",
+      "amount": 80,
+      "date": "2026-07-15",
+      "notes": "Mid-Term Exam Fee"
+    },
+    {
+      "id": 1011,
+      "studentId": 104,
+      "studentName": "Nabila Chowdhury",
+      "type": "Tuition",
+      "amount": 150,
+      "date": "2026-07-22",
+      "notes": "July Monthly Fee"
+    },
+    {
+      "id": 1012,
+      "studentId": 106,
+      "studentName": "Abdullah",
+      "type": "Tuition",
+      "amount": 150,
+      "date": "2026-08-02",
+      "notes": "August Monthly Fee"
+    },
+    {
+      "id": 1013,
+      "studentId": 102,
+      "studentName": "Tarik Hasan",
+      "type": "Tuition",
+      "amount": 200,
+      "date": "2026-08-05",
+      "notes": "August Monthly Fee"
+    },
+    {
+      "id": 1014,
+      "studentId": 104,
+      "studentName": "Nabila Chowdhury",
+      "type": "Tuition",
+      "amount": 150,
+      "date": "2026-08-12",
+      "notes": "August Monthly Fee"
+    },
+    {
+      "id": 1015,
+      "studentId": 103,
+      "studentName": "Zubair Ahmed",
+      "type": "Admission",
+      "amount": 250,
+      "date": "2026-08-16",
+      "notes": "Admission Charge"
+    },
+    {
+      "studentName": "Faiza Binte Mamun",
+      "studentId": 107,
+      "amount": 150,
+      "type": "Tuition",
+      "date": "2026-08-18"
+    }
+  ],
+  "expenses": [
+    {
+      "category": "Electricity Bill",
+      "amount": 950,
+      "date": "2026-08-18",
+      "notes": "Electricity bill for the month of May 26 to July 26"
+    },
+    {
+      "category": "Stationary Purchase Cost",
+      "amount": 250,
+      "date": "2026-08-18",
+      "notes": "Stationary (Pen, Paper, Duster, Chak) purchase for school on 18 Aug 26"
+    },
+    {
+      "category": "House Rent",
+      "amount": 500,
+      "date": "2026-05-01",
+      "notes": "May Campus Rent"
+    },
+    {
+      "category": "Electricity Bill",
+      "amount": 110,
+      "date": "2026-05-10",
+      "notes": "May Power Bill"
+    },
+    {
+      "category": "Stationary Purchase Cost",
+      "amount": 60,
+      "date": "2026-05-15",
+      "notes": "Classroom Supplies"
+    },
+    {
+      "category": "House Rent",
+      "amount": 500,
+      "date": "2026-06-01",
+      "notes": "June Campus Rent"
+    },
+    {
+      "category": "Electricity Bill",
+      "amount": 115,
+      "date": "2026-06-12",
+      "notes": "June Power Bill"
+    },
+    {
+      "category": "Printing Cost",
+      "amount": 75,
+      "date": "2026-06-18",
+      "notes": "Report Cards Printing"
+    },
+    {
+      "category": "Snacks Bill",
+      "amount": 25,
+      "date": "2026-06-25",
+      "notes": "Staff Meeting Refreshments"
+    },
+    {
+      "category": "House Rent",
+      "amount": 500,
+      "date": "2026-07-01",
+      "notes": "July Campus Rent"
+    },
+    {
+      "category": "Electricity Bill",
+      "amount": 125,
+      "date": "2026-07-09",
+      "notes": "July Power Bill"
+    },
+    {
+      "category": "Conveyance Bill",
+      "amount": 50,
+      "date": "2026-07-14",
+      "notes": "Admin Transport"
+    },
+    {
+      "category": "Repair and Maintainence Bill",
+      "amount": 90,
+      "date": "2026-07-28",
+      "notes": "Fan & Light Repairs"
+    },
+    {
+      "category": "House Rent",
+      "amount": 500,
+      "date": "2026-08-01",
+      "notes": "August Campus Rent"
+    },
+    {
+      "category": "Electricity Bill",
+      "amount": 120,
+      "date": "2026-08-10",
+      "notes": "Monthly Power Bill"
+    },
+    {
+      "category": "Stationary Purchase Cost",
+      "amount": 45,
+      "date": "2026-08-15",
+      "notes": "Exam Papers & Markers"
+    },
+    {
+      "category": "Snacks Bill",
+      "amount": 150,
+      "date": "2026-08-18",
+      "notes": "Snacks bill on 18 Aug 26"
+    }
+  ],
+  "notices": [
+    {
+      "title": "Independence Cultural Week",
+      "content": "Preparations start next Monday. Parents are invited for art showcase.",
+      "date": "Aug 14, 2026"
+    },
+    {
+      "title": "Term 2 Examination Schedule",
+      "content": "Final examinations start from September 10th. Routine published.",
+      "date": "Aug 12, 2026"
+    }
+  ],
+  "attendance": {}
+}
