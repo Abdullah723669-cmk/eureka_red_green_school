@@ -2486,7 +2486,8 @@
         async function refreshAndPersistDatabase() {
             try {
                 if (typeof window.saveLocalState === 'function') window.saveLocalState();
-                const res = await fetch('http://localhost:3000/api/data');
+                const res = await fetch('https://eureka-school-api.onrender.com/api/data');
+                //const res = await fetch('http://localhost:3000/api/data');
                 if (res.ok) {
                     const remote = await res.json();
                     if (remote && remote.students) {

@@ -176,8 +176,8 @@ function getLocalIpAddress() {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  const localIp = getLocalIpAddress();
+  // const localIp = getLocalIpAddress();
   console.log(`🚀 Eureka School Prisma Server connected to PostgreSQL running on:`);
-  console.log(`   - Local:   http://localhost:${PORT}`);
-  console.log(`   - Network: http://${localIp}:${PORT} (Access this URL from your Android phone on the same Wi-Fi)`);
+  console.log(`   - Local:   https://eureka-school-api.onrender.com :${PORT}`);
+  console.log(`   - Network: https://eureka-school-api.onrender.com :${PORT}`)
 });
