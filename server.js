@@ -161,6 +161,16 @@ app.post('/api/grades', async (req, res) => {
   }
 });
 
+// Health Check Endpoint
+
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        message: 'Backend is running',
+        time: new Date().toISOString()
+    });
+});
+
 import os from 'os';
 
 function getLocalIpAddress() {
