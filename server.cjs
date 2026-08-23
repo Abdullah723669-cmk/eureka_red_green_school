@@ -7,70 +7,24 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Enable CORS for all origins and headers
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
-
-// Seed default data if database is empty
-async function seedInitialData() {
-  const studentCount = await prisma.student.count();
-  if (studentCount === 0) {
-    console.log("Seeding default school dataset to Prisma SQLite database...");
-    
-    await prisma.student.createMany({
-      data: [
-        { studentId: 106, name: "Abdullah", grade: "Grade 2", guardian: "01711223344", status: "Active", feesPaid: 150, attendedDays: 19, totalDays: 20 },
-        { studentId: 102, name: "Tarik Hasan", grade: "Grade 3", guardian: "01811223344", status: "Active", feesPaid: 200, attendedDays: 18, totalDays: 20 },
-        { studentId: 103, name: "Zubair Ahmed", grade: "Grade 1", guardian: "01911223344", status: "Pending Fee", feesPaid: 0, attendedDays: 16, totalDays: 20 },
-        { studentId: 104, name: "Nabila Chowdhury", grade: "Grade 2", guardian: "01511223344", status: "Active", feesPaid: 150, attendedDays: 20, totalDays: 20 }
-      ]
-    });
-
-    await prisma.staff.createMany({
-      data: [
-        { staffId: 1, name: "Rashid Khan", role: "Class Teacher (Grade 2)", phone: "01700112233" },
-        { staffId: 2, name: "Nusrat Jahan", role: "Math Specialist", phone: "01800112233" },
-        { staffId: 3, name: "Kamal Hossain", role: "Support & Maintenance", phone: "01900112233" }
-      ]
-    });
-
-    await prisma.grade.createMany({
-      data: [
-        { studentId: 106, subject: "Mathematics", score: 92, term: "Mid Term 1" },
-        { studentId: 106, subject: "English", score: 85, term: "Mid Term 1" },
-        { studentId: 106, subject: "Science", score: 88, term: "Mid Term 1" },
-        { studentId: 102, subject: "Mathematics", score: 78, term: "Mid Term 1" },
-        { studentId: 102, subject: "English", score: 82, term: "Mid Term 1" },
-        { studentId: 102, subject: "Science", score: 80, term: "Mid Term 1" }
-      ]
-    });
-
-    await prisma.expense.createMany({
-      data: [
-        { category: "House Rent", amount: 500, date: "2026-08-01", notes: "August Campus Rent" },
-        { category: "Electricity Bill", amount: 120, date: "2026-08-10", notes: "Monthly Power Bill" },
-        { category: "Stationary Purchase Cost", amount: 45, date: "2026-08-15", notes: "Exam Papers & Markers" },
-        { category: "Snacks Bill", amount: 30, date: "2026-08-18", notes: "Staff Refreshments" }
-      ]
-    });
-
-    await prisma.notice.createMany({
-      data: [
-        { title: "Independence Cultural Week", content: "Preparations start next Monday. Parents are invited for art showcase.", date: "Aug 14, 2026" },
-        { title: "Term 2 Examination Schedule", content: "Final examinations start from September 10th. Routine published.", date: "Aug 12, 2026" }
-      ]
-    });
-  }
-}
 
 // 1. Get All Data
 app.get('/api/data', async (req, res) => {
   try {
     const studentsDb = await prisma.student.findMany({ orderBy: { studentId: 'asc' } });
-    const staffDb = await prisma.staff.findMany();
-    const grades = await prisma.grade.findMany();
+    const staffDb = await prisma.staff.findMany({ orderBy: { staffId: 'asc' } });
+    const grades = await prisma.grade.findMany({ orderBy: { id: 'asc' } });
     const transactions = await prisma.transaction.findMany({ orderBy: { id: 'desc' } });
     const expenses = await prisma.expense.findMany({ orderBy: { id: 'desc' } });
     const notices = await prisma.notice.findMany({ orderBy: { id: 'desc' } });
+    const attendanceDb = await prisma.attendance.findMany();
 
     const students = studentsDb.map(s => ({
       id: s.studentId,
@@ -80,17 +34,30 @@ app.get('/api/data', async (req, res) => {
       status: s.status,
       feesPaid: s.feesPaid,
       attendedDays: s.attendedDays,
-      totalDays: s.totalDays
+      totalDays: s.totalDays,
+      joiningDate: s.joiningDate,
+      leavingDate: s.leavingDate || ''
     }));
 
     const staff = staffDb.map(st => ({
       id: st.staffId,
       name: st.name,
       role: st.role,
-      phone: st.phone
+      phone: st.phone,
+      joiningDate: st.joiningDate,
+      leavingDate: st.leavingDate || ''
     }));
 
-    res.json({ students, staff, grades, transactions, expenses, notices });
+    const attendance = {};
+    attendanceDb.forEach(att => {
+      try {
+        attendance[att.date] = JSON.parse(att.records);
+      } catch (e) {
+        attendance[att.date] = att.records;
+      }
+    });
+
+    res.json({ students, staff, grades, transactions, expenses, notices, attendance });
   } catch (err) {
     console.error("Error fetching Prisma DB data:", err);
     res.status(500).json({ error: "Failed to read database" });
@@ -100,20 +67,35 @@ app.get('/api/data', async (req, res) => {
 // 2. Add Pupil
 app.post('/api/students', async (req, res) => {
   try {
-    const { id, name, grade, guardian, status, feesPaid, attendedDays, totalDays } = req.body;
+    const { id, name, grade, guardian, status, feesPaid, attendedDays, totalDays, joiningDate, leavingDate } = req.body;
+    
+    let targetStudentId = Number(id);
+    if (!targetStudentId || isNaN(targetStudentId)) {
+      const maxStudent = await prisma.student.aggregate({ _max: { studentId: true } });
+      targetStudentId = (maxStudent._max.studentId || 100) + 1;
+    } else {
+      const existing = await prisma.student.findUnique({ where: { studentId: targetStudentId } });
+      if (existing) {
+        const maxStudent = await prisma.student.aggregate({ _max: { studentId: true } });
+        targetStudentId = (maxStudent._max.studentId || targetStudentId) + 1;
+      }
+    }
+
     const newStudent = await prisma.student.create({
       data: {
-        studentId: id,
+        studentId: targetStudentId,
         name,
         grade,
         guardian,
         status: status || "Active",
-        feesPaid: feesPaid || 0,
-        attendedDays: attendedDays || 20,
-        totalDays: totalDays || 20
+        feesPaid: feesPaid ? Number(feesPaid) : 0,
+        attendedDays: attendedDays ? Number(attendedDays) : 20,
+        totalDays: totalDays ? Number(totalDays) : 20,
+        joiningDate: joiningDate || "2024-01-10",
+        leavingDate: leavingDate || null
       }
     });
-    res.json({ success: true, student: newStudent });
+    res.json({ success: true, student: { ...newStudent, id: newStudent.studentId } });
   } catch (err) {
     console.error("Error adding student:", err);
     res.status(500).json({ error: "Failed to add student" });
@@ -123,32 +105,60 @@ app.post('/api/students', async (req, res) => {
 // 3. Add Staff
 app.post('/api/staff', async (req, res) => {
   try {
-    const { id, name, role, phone } = req.body;
+    const { id, name, role, phone, joiningDate, leavingDate } = req.body;
+
+    let targetStaffId = Number(id);
+    if (!targetStaffId || isNaN(targetStaffId)) {
+      const maxStaff = await prisma.staff.aggregate({ _max: { staffId: true } });
+      targetStaffId = (maxStaff._max.staffId || 0) + 1;
+    } else {
+      const existing = await prisma.staff.findUnique({ where: { staffId: targetStaffId } });
+      if (existing) {
+        const maxStaff = await prisma.staff.aggregate({ _max: { staffId: true } });
+        targetStaffId = (maxStaff._max.staffId || targetStaffId) + 1;
+      }
+    }
+
     const newStaff = await prisma.staff.create({
-      data: { staffId: id, name, role, phone }
+      data: {
+        staffId: targetStaffId,
+        name,
+        role,
+        phone,
+        joiningDate: joiningDate || "2023-01-15",
+        leavingDate: leavingDate || null
+      }
     });
-    res.json({ success: true, staff: newStaff });
+    res.json({ success: true, staff: { ...newStaff, id: newStaff.staffId } });
   } catch (err) {
     console.error("Error adding staff:", err);
     res.status(500).json({ error: "Failed to add staff" });
   }
 });
 
-// 4. Record Fee Payment
-app.post('/api/fees', async (req, res) => {
+// 4. Record Fee Payment (supports both /api/fees and /api/transactions)
+const handleFeeOrTransaction = async (req, res) => {
   try {
     const { studentName, studentId, amount, type, date } = req.body;
     const tx = await prisma.transaction.create({
-      data: { studentName, studentId, amount, type, date }
+      data: {
+        studentName: studentName || "Student",
+        studentId: Number(studentId) || 0,
+        amount: Number(amount) || 0,
+        type: type || "Tuition",
+        date: date || new Date().toISOString().split('T')[0]
+      }
     });
     
     // Update student fees in DB
-    const student = await prisma.student.findUnique({ where: { studentId } });
-    if (student) {
-      await prisma.student.update({
-        where: { studentId },
-        data: { feesPaid: student.feesPaid + amount, status: "Active" }
-      });
+    if (studentId) {
+      const student = await prisma.student.findUnique({ where: { studentId: Number(studentId) } });
+      if (student) {
+        await prisma.student.update({
+          where: { studentId: Number(studentId) },
+          data: { feesPaid: (student.feesPaid || 0) + Number(amount || 0), status: "Active" }
+        });
+      }
     }
 
     res.json({ success: true, transaction: tx });
@@ -156,14 +166,22 @@ app.post('/api/fees', async (req, res) => {
     console.error("Error recording fee:", err);
     res.status(500).json({ error: "Failed to record fee" });
   }
-});
+};
+
+app.post('/api/fees', handleFeeOrTransaction);
+app.post('/api/transactions', handleFeeOrTransaction);
 
 // 5. Record Expense
 app.post('/api/expenses', async (req, res) => {
   try {
     const { category, amount, date, notes } = req.body;
     const exp = await prisma.expense.create({
-      data: { category, amount, date, notes }
+      data: {
+        category,
+        amount: Number(amount),
+        date: date || new Date().toISOString().split('T')[0],
+        notes: notes || null
+      }
     });
     res.json({ success: true, expense: exp });
   } catch (err) {
@@ -177,7 +195,11 @@ app.post('/api/notices', async (req, res) => {
   try {
     const { title, content, date } = req.body;
     const notice = await prisma.notice.create({
-      data: { title, content, date }
+      data: {
+        title,
+        content,
+        date: date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      }
     });
     res.json({ success: true, notice });
   } catch (err) {
@@ -191,7 +213,12 @@ app.post('/api/grades', async (req, res) => {
   try {
     const { studentId, subject, score, term } = req.body;
     const grade = await prisma.grade.create({
-      data: { studentId, subject, score, term }
+      data: {
+        studentId: Number(studentId),
+        subject,
+        score: Number(score),
+        term: term || "Mid Term 1"
+      }
     });
     res.json({ success: true, grade });
   } catch (err) {
@@ -200,11 +227,48 @@ app.post('/api/grades', async (req, res) => {
   }
 });
 
+// 8. Daily Attendance Roll Call
+app.post('/api/attendance', async (req, res) => {
+  try {
+    const { date, records } = req.body;
+    const dateStr = date || new Date().toISOString().split('T')[0];
+    const recordsStr = typeof records === 'string' ? records : JSON.stringify(records || {});
+
+    const attendanceRecord = await prisma.attendance.upsert({
+      where: { date: dateStr },
+      update: { records: recordsStr },
+      create: { date: dateStr, records: recordsStr }
+    });
+
+    res.json({ success: true, attendance: attendanceRecord });
+  } catch (err) {
+    console.error("Error saving attendance to PostgreSQL:", err);
+    res.status(500).json({ error: "Failed to save attendance" });
+  }
+});
+
+app.get('/api/attendance', async (req, res) => {
+  try {
+    const records = await prisma.attendance.findMany({ orderBy: { date: 'desc' } });
+    res.json({ success: true, records });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch attendance" });
+  }
+});
+
+// Health Check Endpoints
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Backend is running', time: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Eureka School Backend is running and connected to Neon PostgreSQL',
+    time: new Date().toISOString()
+  });
+});
+
 app.listen(PORT, async () => {
   console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
-  try {
-    await seedInitialData();
-  } catch (e) {
-    console.warn("Seeding notice:", e.message);
-  }
 });
