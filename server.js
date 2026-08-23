@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 
 const app = express();
 const prisma = new PrismaClient();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
@@ -163,7 +163,7 @@ app.post('/api/grades', async (req, res) => {
 
 // Health Check Endpoint
 
-app.get('/health', (req, res) => {
+app.get('/', (req, res) => {
     res.json({
         status: 'OK',
         message: 'Backend is running',
@@ -185,9 +185,9 @@ function getLocalIpAddress() {
   return 'localhost';
 }
 
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   // const localIp = getLocalIpAddress();
-  console.log(`🚀 Eureka School Prisma Server connected to PostgreSQL running on:`);
-  console.log(`   - Local:   https://eureka-school-api.onrender.com :${PORT}`);
-  console.log(`   - Network: https://eureka-school-api.onrender.com :${PORT}`)
+  console.log(`🚀 Eureka School Prisma Server connected to PostgreSQL running on: ${PORT}`);
+  // console.log(`server is running on port :${PORT}`);
+  // console.log(`   - Network: https://eureka-school-api.onrender.com :${PORT}`)
 });

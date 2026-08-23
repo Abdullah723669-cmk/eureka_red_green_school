@@ -101,7 +101,7 @@
     {
       "id": 1,
       "name": "Rashid Khan",
-      "role": "Class Teacher (Grade 2)",
+      "role": "Teacher",
       "phone": "01700112233",
       "joiningDate": "2023-01-15",
       "leavingDate": ""
@@ -109,7 +109,7 @@
     {
       "id": 2,
       "name": "Nusrat Jahan",
-      "role": "Math Specialist",
+      "role": "Teacher",
       "phone": "01800112233",
       "joiningDate": "2023-01-15",
       "leavingDate": ""
