@@ -277,6 +277,7 @@
                         <div class="flex items-center gap-1.5">
                             <input type="date" id="feeDateFilter" onchange="renderFeeHistory()" class="text-xs py-1 px-2 bg-slate-100 border border-slate-200 rounded-lg outline-none text-slate-700">
                             <button onclick="clearFeeDateFilter()" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-300 transition">Show All</button>
+                            <button onclick="printAllFeeReceipts()" class="text-[10px] bg-eureka-green text-white px-2 py-1 rounded-lg hover:bg-emerald-800 transition flex items-center gap-1"><i class="fa-solid fa-print"></i> Print All</button>
                         </div>
                     </div>
                     <div id="feeHistoryContainer" class="space-y-2 text-xs divide-y divide-slate-100">
@@ -357,6 +358,7 @@
                             </select>
                             <input type="date" id="expenseDateFilter" onchange="renderExpenseHistory()" class="text-xs py-1 px-2 bg-slate-100 border border-slate-200 rounded-lg outline-none text-slate-700">
                             <button onclick="clearExpenseFilters()" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-1 rounded-lg hover:bg-slate-300 transition">Show All</button>
+                            <button onclick="printAllExpenseVouchers()" class="text-[10px] bg-eureka-red text-white px-2 py-1 rounded-lg hover:bg-red-700 transition flex items-center gap-1"><i class="fa-solid fa-print"></i> Print All</button>
                         </div>
                     </div>
                     <div id="expenseHistoryContainer" class="space-y-2 text-xs divide-y divide-slate-100">
@@ -2041,6 +2043,164 @@
             }, 500);
         }
 
+        const DOCUMENT_PRINT_STYLES = `
+            * { box-sizing: border-box; }
+            body { font-family: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif; color: #0F172A; margin: 0; padding: 24px; background: #fff; }
+            .doc { border: 1px solid #CBD5E1; border-radius: 10px; padding: 24px; max-width: 720px; margin: 0 auto 24px auto; }
+            .doc + .doc { page-break-before: always; }
+            .doc-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0F172A; padding-bottom: 12px; margin-bottom: 16px; }
+            .school { font-size: 18px; font-weight: 800; margin: 0; }
+            .school-sub { font-size: 11px; color: #64748B; margin: 2px 0 0 0; }
+            .doc-type { font-size: 13px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; text-align: right; }
+            .doc-type small { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0; color: #64748B; text-transform: none; margin-top: 3px; }
+            table.fields { width: 100%; border-collapse: collapse; font-size: 12px; }
+            table.fields td { padding: 7px 8px; border-bottom: 1px solid #E2E8F0; vertical-align: top; }
+            table.fields td.label { width: 38%; color: #64748B; font-weight: 600; }
+            table.fields td.value { font-weight: 700; }
+            .amount-box { margin-top: 16px; padding: 12px 14px; background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+            .amount-box span { font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
+            .amount-box strong { font-size: 22px; font-weight: 800; }
+            .signatures { display: flex; justify-content: space-between; margin-top: 48px; font-size: 11px; color: #475569; }
+            .signatures div { border-top: 1px solid #94A3B8; padding-top: 6px; width: 40%; text-align: center; }
+            .doc-foot { margin-top: 18px; font-size: 10px; color: #94A3B8; text-align: center; }
+            @media print { body { padding: 0; } .doc { border: none; page-break-inside: avoid; } }
+        `;
+
+        function openPrintDocument(title, bodyHtml, extraStyles) {
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                showToast("Please allow pop-ups to print this document.");
+                return;
+            }
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <title>${title}</title>
+                        ${extraStyles || ''}
+                        <style>${DOCUMENT_PRINT_STYLES}</style>
+                    </head>
+                    <body>${bodyHtml}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                try {
+                    printWindow.print();
+                    printWindow.close();
+                } catch (e) {}
+            }, 500);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[ch]);
+        }
+
+        function formatDocumentDate(dateStr) {
+            const parsed = new Date(dateStr);
+            if (!dateStr || isNaN(parsed.getTime())) return escapeHtml(dateStr || '—');
+            return parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function documentHeader(docType, docNumber) {
+            return `
+                <div class="doc-head">
+                    <div>
+                        <p class="school">Eureka Red Green Primary School</p>
+                        <p class="school-sub">Official Financial Document • Administration Office</p>
+                    </div>
+                    <div class="doc-type">${docType}<small>No. ${escapeHtml(docNumber)}</small></div>
+                </div>
+            `;
+        }
+
+        function documentFooter() {
+            return `
+                <div class="signatures">
+                    <div>Received / Prepared By</div>
+                    <div>Authorised Signature</div>
+                </div>
+                <p class="doc-foot">Computer generated document • Printed on ${formatDocumentDate(new Date().toISOString().split('T')[0])}</p>
+            `;
+        }
+
+        function buildFeeReceiptHtml(transaction, index) {
+            const student = (window.appData.students || []).find(s => s.id === transaction.studentId);
+            const receiptNo = transaction.id || `FR-${String(index + 1).padStart(4, '0')}`;
+            return `
+                <div class="doc">
+                    ${documentHeader('Fee Receipt', receiptNo)}
+                    <table class="fields">
+                        <tr><td class="label">Student Name</td><td class="value">${escapeHtml(transaction.studentName || student?.name || '—')}</td></tr>
+                        <tr><td class="label">Student ID / Class</td><td class="value">${escapeHtml(transaction.studentId ?? '—')} • ${escapeHtml(student?.grade || '—')}</td></tr>
+                        <tr><td class="label">Guardian Contact</td><td class="value">${escapeHtml(student?.guardian || '—')}</td></tr>
+                        <tr><td class="label">Fee Type</td><td class="value">${escapeHtml(transaction.type || '—')}</td></tr>
+                        <tr><td class="label">Payment Date</td><td class="value">${formatDocumentDate(transaction.date)}</td></tr>
+                        <tr><td class="label">Remarks</td><td class="value">${escapeHtml(transaction.notes || '—')}</td></tr>
+                    </table>
+                    <div class="amount-box"><span>Amount Received</span><strong>$${escapeHtml(transaction.amount ?? 0)}</strong></div>
+                    ${documentFooter()}
+                </div>
+            `;
+        }
+
+        function buildExpenseVoucherHtml(expense, index) {
+            const voucherNo = expense.id || `EV-${String(index + 1).padStart(4, '0')}`;
+            return `
+                <div class="doc">
+                    ${documentHeader('Expense Voucher', voucherNo)}
+                    <table class="fields">
+                        <tr><td class="label">Expense Category</td><td class="value">${escapeHtml(expense.category || '—')}</td></tr>
+                        <tr><td class="label">Expense Date</td><td class="value">${formatDocumentDate(expense.date)}</td></tr>
+                        <tr><td class="label">Payment Mode</td><td class="value">${escapeHtml(expense.paymentMode || 'Cash')}</td></tr>
+                        <tr><td class="label">Details / Notes</td><td class="value">${escapeHtml(expense.notes || '—')}</td></tr>
+                    </table>
+                    <div class="amount-box"><span>Amount Paid</span><strong>$${escapeHtml(expense.amount ?? 0)}</strong></div>
+                    ${documentFooter()}
+                </div>
+            `;
+        }
+
+        function printFeeReceipt(index) {
+            const transaction = (window.appData.transactions || [])[index];
+            if (!transaction) return;
+            openPrintDocument(`Fee Receipt - ${transaction.studentName || 'Student'}`, buildFeeReceiptHtml(transaction, index));
+        }
+
+        function printExpenseVoucher(index) {
+            const expense = (window.appData.expenses || [])[index];
+            if (!expense) return;
+            openPrintDocument(`Expense Voucher - ${expense.category || 'Expense'}`, buildExpenseVoucherHtml(expense, index));
+        }
+
+        function printAllFeeReceipts() {
+            const filterDate = document.getElementById('feeDateFilter')?.value || '';
+            const all = window.appData.transactions || [];
+            const list = all.map((t, index) => ({ t, index })).filter(({ t }) => !filterDate || t.date === filterDate);
+            if (list.length === 0) {
+                showToast("No fee receipts to print for the current filter.");
+                return;
+            }
+            openPrintDocument('Fee Receipts', list.map(({ t, index }) => buildFeeReceiptHtml(t, index)).join(''));
+        }
+
+        function printAllExpenseVouchers() {
+            const filterDate = document.getElementById('expenseDateFilter')?.value || '';
+            const filterCat = document.getElementById('expenseCategoryFilter')?.value || 'ALL';
+            const all = window.appData.expenses || [];
+            const list = all.map((e, index) => ({ e, index }))
+                .filter(({ e }) => (!filterDate || e.date === filterDate) && (filterCat === 'ALL' || e.category === filterCat));
+            if (list.length === 0) {
+                showToast("No expense vouchers to print for the current filter.");
+                return;
+            }
+            openPrintDocument('Expense Vouchers', list.map(({ e, index }) => buildExpenseVoucherHtml(e, index)).join(''));
+        }
+
         function calculateStudentRankings() {
             const students = window.appData.students || [];
             const grades = window.appData.grades || [];
@@ -2183,6 +2343,7 @@
                 return;
             }
 
+            const allTransactions = window.appData.transactions || [];
             container.innerHTML = list.map(t => `
                 <div class="flex justify-between items-center py-2.5 px-1">
                     <div class="flex items-center gap-2.5">
@@ -2194,7 +2355,12 @@
                             <p class="text-[10px] text-slate-400">${t.type} Fee • 📅 ${t.date}</p>
                         </div>
                     </div>
-                    <span class="font-extrabold text-eureka-green text-xs">+$${t.amount}</span>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="font-extrabold text-eureka-green text-xs">+$${t.amount}</span>
+                        <button onclick="printFeeReceipt(${allTransactions.indexOf(t)})" title="Print receipt" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-emerald-100 hover:text-eureka-green transition flex items-center justify-center text-[11px]">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -2235,6 +2401,7 @@
                 return;
             }
 
+            const allExpenses = window.appData.expenses || [];
             container.innerHTML = list.map(e => {
                 const style = getExpenseIcon(e.category);
                 return `
@@ -2248,7 +2415,12 @@
                             <p class="text-[10px] text-slate-400">${e.notes ? e.notes + ' • ' : ''}📅 ${e.date}</p>
                         </div>
                     </div>
-                    <span class="font-extrabold text-eureka-red text-xs">-$${e.amount}</span>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="font-extrabold text-eureka-red text-xs">-$${e.amount}</span>
+                        <button onclick="printExpenseVoucher(${allExpenses.indexOf(e)})" title="Print voucher" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 hover:bg-red-100 hover:text-eureka-red transition flex items-center justify-center text-[11px]">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                    </div>
                 </div>
             `}).join('');
         }
@@ -2807,6 +2979,10 @@
         window.togglePasswordVisibility = togglePasswordVisibility;
         window.renderFinancialStatementPage = renderFinancialStatementPage;
         window.printFinancialStatement = printFinancialStatement;
+        window.printFeeReceipt = printFeeReceipt;
+        window.printExpenseVoucher = printExpenseVoucher;
+        window.printAllFeeReceipts = printAllFeeReceipts;
+        window.printAllExpenseVouchers = printAllExpenseVouchers;
         window.toggleModal = toggleModal;
         window.dismissBanner = dismissBanner;
         window.showToast = showToast;
