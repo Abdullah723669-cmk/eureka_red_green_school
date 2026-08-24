@@ -12,6 +12,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="application-name" content="Eureka App">
     
+    <link rel="icon" type="image/svg+xml" href="assets/logo-3d.svg">
+    <link rel="apple-touch-icon" href="assets/logo-3d.svg">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -47,11 +50,24 @@
         }
     </script>
     <style>
+        html {
+            background-color: #F1F5F9;
+        }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
             touch-action: manipulation;
+        }
+        /* Faint school-activity backdrop behind the whole app */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: url('assets/school-activity.jpg') center / cover no-repeat;
+            opacity: 0.06;
+            pointer-events: none;
         }
         /* Hide scrollbar for mobile native feel */
         ::-webkit-scrollbar {
@@ -66,17 +82,21 @@
             transform: scale(0.97);
             opacity: 0.9;
         }
+        .brand-logo {
+            filter: drop-shadow(0 3px 4px rgba(0, 25, 15, 0.45));
+        }
+        @media print {
+            body::before { display: none; }
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-16">
+<body class="text-slate-800 antialiased min-h-screen flex flex-col justify-between pb-16">
 
     <!-- Top Android App Header -->
     <header class="bg-eureka-green text-white sticky top-0 z-50 shadow-md pt-safe">
         <div class="max-w-md md:max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-eureka-red font-bold text-xl shadow-inner border-2 border-eureka-red shrink-0">
-                    E
-                </div>
+                <img src="assets/logo-3d.svg" alt="Eureka Red Green School logo" class="brand-logo w-11 h-11 shrink-0">
                 <div>
                     <h1 class="font-extrabold text-base leading-tight tracking-tight">Eureka Red Green School</h1>
                     <p class="text-[10px] text-emerald-200 tracking-wider uppercase font-semibold">Homeo College Road, Gazipur Chowrasta</p>
