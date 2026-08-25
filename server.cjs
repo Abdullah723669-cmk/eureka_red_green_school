@@ -294,5 +294,25 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, async () => {
+  // Auto-migrate: ensure Lesson table exists (safe to run on every startup)
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Lesson" (
+        "id"          SERIAL PRIMARY KEY,
+        "grade"       TEXT NOT NULL,
+        "subject"     TEXT NOT NULL,
+        "title"       TEXT NOT NULL,
+        "description" TEXT,
+        "fileType"    TEXT NOT NULL DEFAULT 'link',
+        "fileUrl"     TEXT,
+        "postedBy"    TEXT NOT NULL DEFAULT 'Teacher',
+        "date"        TEXT NOT NULL,
+        "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log('✅ Lesson table verified/created');
+  } catch (e) {
+    console.warn('⚠️ Lesson table auto-migrate warning:', e.message);
+  }
   console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
 });

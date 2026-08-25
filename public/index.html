@@ -946,18 +946,30 @@
             <!-- Today's Online Lessons Feed -->
             <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                 <!-- Header -->
-                <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100">
-                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
-                        <i class="fa-solid fa-chalkboard text-sm"></i>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                            <i class="fa-solid fa-chalkboard text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-800 leading-tight">Today's Online Lessons</h3>
+                            <p class="text-[10px] text-slate-400">Study materials posted by your teachers</p>
+                        </div>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-sm text-slate-800 leading-tight">Today's Online Lessons</h3>
-                        <p class="text-[10px] text-slate-400">Study materials posted by your teachers</p>
-                    </div>
+                    <span id="studentLessonGradeLabel" class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">My Class</span>
                 </div>
 
-                <!-- Filters: Subject + Date -->
-                <div class="grid grid-cols-2 gap-2">
+                <!-- Filters: Grade + Subject + Date -->
+                <div class="grid grid-cols-3 gap-2">
+                    <select id="studentLessonGradeFilter" onchange="renderStudentLessonsFeed()" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-600">
+                        <option value="MY_CLASS">My Class</option>
+                        <option value="ALL">All Classes</option>
+                        <option value="Grade 1">Grade 1</option>
+                        <option value="Grade 2">Grade 2</option>
+                        <option value="Grade 3">Grade 3</option>
+                        <option value="Grade 4">Grade 4</option>
+                        <option value="Grade 5">Grade 5</option>
+                    </select>
                     <select id="studentLessonSubjectFilter" onchange="renderStudentLessonsFeed()" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-600">
                         <option value="ALL">All Subjects</option>
                         <option value="Mathematics">Mathematics</option>
@@ -2829,6 +2841,7 @@
         function switchStudentPortal(studentId) {
             window.activeStudentId = parseInt(studentId);
             renderStudentPortalView(window.activeStudentId);
+            renderStudentLessonsFeed();
         }
 
         function renderStudentPortalView(studentId) {
@@ -3125,23 +3138,37 @@
         function renderStudentLessonsFeed() {
             const subjectFilter = document.getElementById('studentLessonSubjectFilter')?.value || 'ALL';
             const dateFilter    = document.getElementById('studentLessonDateFilter')?.value || '';
+            const gradeFilter   = document.getElementById('studentLessonGradeFilter')?.value || 'MY_CLASS';
 
-            // Determine the active student's grade for auto-filtering
+            // Determine the active student's grade
             const activeStudent = (window.appData.students || []).find(s => s.id === window.activeStudentId);
             const studentGrade  = activeStudent ? activeStudent.grade : null;
 
             let list = [...(window.appData.lessons || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-            // Auto-filter to student's own grade + "All Classes" lessons
-            if (studentGrade) list = list.filter(l => l.grade === studentGrade || l.grade === 'All Classes');
+            // Grade filtering
+            if (gradeFilter === 'MY_CLASS' && studentGrade) {
+                // Show own grade + All Classes
+                list = list.filter(l => l.grade === studentGrade || l.grade === 'All Classes');
+            } else if (gradeFilter !== 'ALL' && gradeFilter !== 'MY_CLASS') {
+                list = list.filter(l => l.grade === gradeFilter || l.grade === 'All Classes');
+            }
+            // gradeFilter === 'ALL' → show everything
 
             if (subjectFilter !== 'ALL') list = list.filter(l => l.subject === subjectFilter);
             if (dateFilter) list = list.filter(l => l.date === dateFilter);
 
             const container = document.getElementById('studentLessonsContainer');
             if (!container) return;
+
+            // Update the grade label
+            const gradeLabelEl = document.getElementById('studentLessonGradeLabel');
+            if (gradeLabelEl && studentGrade) {
+                gradeLabelEl.textContent = gradeFilter === 'MY_CLASS' ? `My Class: ${studentGrade}` : 'All Classes';
+            }
+
             if (list.length === 0) {
-                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">No lessons posted for your class yet. Check back soon! 📖</p>`;
+                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">No lessons found for the selected filters. Try "All Classes" to see everything. 📖</p>`;
                 return;
             }
             container.innerHTML = list.map(buildLessonCard).join('');
