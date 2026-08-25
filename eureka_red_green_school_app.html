@@ -632,135 +632,221 @@
 
         <!-- 2. TEACHER VIEW -->
         <section id="view-teacher" class="space-y-3.5 hidden">
-            <!-- Attendance Selector & Tracker -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h2 class="font-bold text-sm text-slate-800">Daily Attendance</h2>
-                        <p class="text-[11px] text-slate-400">Class: Primary Section</p>
-                    </div>
-                    <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" id="attendanceDate">Today</span>
-                </div>
-
-                <div id="attendanceList" class="space-y-2 pt-1">
-                    <!-- Attendance list generated dynamically -->
-                </div>
-
-                <button onclick="saveAttendance()" class="w-full bg-eureka-green text-white text-xs font-bold py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-check-double"></i> Save Daily Roll Call
-                </button>
+            <!-- Teacher Tabs -->
+            <div class="flex bg-slate-200 p-1 rounded-xl gap-1 text-[11px] font-bold text-slate-600 overflow-x-auto">
+                <button onclick="switchTeacherTab('attendance')" id="teacher-tab-attendance" class="flex-1 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition touch-active min-w-[70px]">Attendance</button>
+                <button onclick="switchTeacherTab('gradebook')" id="teacher-tab-gradebook" class="flex-1 py-2 rounded-lg transition touch-active min-w-[70px]">Gradebook</button>
+                <button onclick="switchTeacherTab('online-teaching')" id="teacher-tab-online-teaching" class="flex-1 py-2 rounded-lg transition touch-active min-w-[100px] flex items-center justify-center gap-1"><i class="fa-solid fa-video text-eureka-green"></i> Online Teaching</button>
             </div>
 
-            <!-- Gradebook & Marks Entry -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-pen-to-square text-eureka-red"></i> Gradebook Entry
-                </h2>
-                <form id="gradeForm" onsubmit="handleGradeSubmit(event)" class="space-y-2.5">
-                    <div class="grid grid-cols-2 gap-2">
+            <!-- Tab: Attendance -->
+            <div id="teacher-view-attendance" class="space-y-3">
+                <!-- Attendance Selector & Tracker -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex justify-between items-center">
                         <div>
-                            <label class="text-[11px] font-semibold text-slate-500">Student</label>
-                            <select id="gradeStudentSelect" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                                <!-- Dynamic options -->
-                            </select>
+                            <h2 class="font-bold text-sm text-slate-800">Daily Attendance</h2>
+                            <p class="text-[11px] text-slate-400">Class: Primary Section</p>
                         </div>
-                        <div>
-                            <label class="text-[11px] font-semibold text-slate-500">Subject</label>
-                            <select id="gradeSubject" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="Mathematics">Bangla</option>
-                                <option value="English">English</option>
-                                <option value="Science">Science</option>
-                                <option value="Social Studies">Social Studies</option>
-                                <option value="Social Studies">Religion</option>
-                                <option value="Art & Craft">Art & Craft</option>
-                            </select>
-                        </div>
+                        <span class="text-xs bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-1 rounded-full" id="attendanceDate">Today</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[11px] font-semibold text-slate-500">Score (0-100)</label>
-                            <input type="number" id="gradeScore" min="0" max="100" required placeholder="85" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[11px] font-semibold text-slate-500">Term</label>
-                            <select id="gradeTerm" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                                <option value="Mid Term 1">First Term </option>
-                                <option value="Mid Term 1">Second Term </option>
-                                <option value="Final Term">Final Term</option>
-                            </select>
-                        </div>
+
+                    <div id="attendanceList" class="space-y-2 pt-1">
+                        <!-- Attendance list generated dynamically -->
                     </div>
-                    <button type="submit" class="w-full bg-slate-800 text-white text-xs font-bold py-3 rounded-xl hover:bg-black transition touch-active">Save Grade Entry</button>
-                </form>
+
+                    <button onclick="saveAttendance()" class="w-full bg-eureka-green text-white text-xs font-bold py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check-double"></i> Save Daily Roll Call
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab: Gradebook -->
+            <div id="teacher-view-gradebook" class="space-y-3 hidden">
+                <!-- Gradebook & Marks Entry -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-eureka-red"></i> Gradebook Entry
+                    </h2>
+                    <form id="gradeForm" onsubmit="handleGradeSubmit(event)" class="space-y-2.5">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Student</label>
+                                <select id="gradeStudentSelect" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                    <!-- Dynamic options -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Subject</label>
+                                <select id="gradeSubject" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Bangla">Bangla</option>
+                                    <option value="English">English</option>
+                                    <option value="Science">Science</option>
+                                    <option value="Social Studies">Social Studies</option>
+                                    <option value="Religion">Religion</option>
+                                    <option value="Art & Craft">Art & Craft</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Score (0-100)</label>
+                                <input type="number" id="gradeScore" min="0" max="100" required placeholder="85" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-slate-500">Term</label>
+                                <select id="gradeTerm" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                                    <option value="Mid Term 1">First Term</option>
+                                    <option value="Mid Term 2">Second Term</option>
+                                    <option value="Final Term">Final Term</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-slate-800 text-white text-xs font-bold py-3 rounded-xl hover:bg-black transition touch-active">Save Grade Entry</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tab: Online Teaching -->
+            <div id="teacher-view-online-teaching" class="space-y-3 hidden">
+                <!-- Online Teaching Dashboard -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-video text-eureka-green"></i> Online Teaching Dashboard
+                            </h2>
+                            <p class="text-[11px] text-slate-400">Create and manage lesson content</p>
+                        </div>
+                        <button onclick="openAddLessonModal()" class="bg-eureka-green text-white text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-emerald-800 transition touch-active shadow">
+                            <i class="fa-solid fa-plus"></i> Add Lesson
+                        </button>
+                    </div>
+
+                    <!-- Lesson Tabs -->
+                    <div class="flex bg-slate-100 p-1 rounded-lg gap-1 text-[11px] font-semibold text-slate-600">
+                        <button onclick="switchLessonTab('drafts')" id="lesson-tab-drafts" class="flex-1 py-1.5 rounded-md bg-white text-emerald-800 shadow-sm transition">My Drafts</button>
+                        <button onclick="switchLessonTab('published')" id="lesson-tab-published" class="flex-1 py-1.5 rounded-md transition">My Published</button>
+                    </div>
+
+                    <!-- Lessons List -->
+                    <div id="lessonsListContainer" class="space-y-2 pt-1">
+                        <!-- Dynamic lessons list -->
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- 3. STUDENT / PARENT VIEW -->
         <section id="view-student" class="space-y-3.5 hidden">
-            <!-- Select Student Dropdown for Parents / Admin -->
-            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <i class="fa-solid fa-users text-eureka-green"></i> Pupil Profile:
-                </span>
-                <select id="studentPortalSelector" onchange="switchStudentPortal(this.value)" class="text-xs font-bold bg-slate-100 text-slate-800 py-1.5 px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-eureka-green">
-                    <!-- Populated dynamically -->
-                </select>
+            <!-- Student Tabs -->
+            <div class="flex bg-slate-200 p-1 rounded-xl gap-1 text-[11px] font-bold text-slate-600 overflow-x-auto">
+                <button onclick="switchStudentTab('profile')" id="student-tab-profile" class="flex-1 py-2 rounded-lg bg-white text-emerald-800 shadow-sm transition touch-active min-w-[60px]">Profile</button>
+                <button onclick="switchStudentTab('online-teaching')" id="student-tab-online-teaching" class="flex-1 py-2 rounded-lg transition touch-active min-w-[100px] flex items-center justify-center gap-1"><i class="fa-solid fa-video text-eureka-green"></i> Online Teaching</button>
             </div>
 
-            <!-- Student Header Profile Banner -->
-            <div class="bg-gradient-to-r from-eureka-green to-emerald-900 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
-                <div id="studentAvatar" class="w-14 h-14 rounded-full bg-white text-eureka-green flex items-center justify-center font-bold text-2xl border-2 border-eureka-gold shadow shrink-0">
-                    🎓
+            <!-- Tab: Profile -->
+            <div id="student-view-profile" class="space-y-3">
+                <!-- Select Student Dropdown for Parents / Admin -->
+                <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-users text-eureka-green"></i> Pupil Profile:
+                    </span>
+                    <select id="studentPortalSelector" onchange="switchStudentPortal(this.value)" class="text-xs font-bold bg-slate-100 text-slate-800 py-1.5 px-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-eureka-green">
+                        <!-- Populated dynamically -->
+                    </select>
                 </div>
-                <div>
-                    <h2 class="font-extrabold text-base leading-tight" id="studentProfileName">Abdullah</h2>
-                    <p class="text-xs text-emerald-200" id="studentProfileDetails">Roll No: #106 | Grade 2</p>
-                    <span id="studentProfileBadge" class="inline-block mt-1 text-[10px] bg-emerald-700/60 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold">Status: Active & Paid</span>
+
+                <!-- Student Header Profile Banner -->
+                <div class="bg-gradient-to-r from-eureka-green to-emerald-900 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
+                    <div id="studentAvatar" class="w-14 h-14 rounded-full bg-white text-eureka-green flex items-center justify-center font-bold text-2xl border-2 border-eureka-gold shadow shrink-0">
+                        🎓
+                    </div>
+                    <div>
+                        <h2 class="font-extrabold text-base leading-tight" id="studentProfileName">Abdullah</h2>
+                        <p class="text-xs text-emerald-200" id="studentProfileDetails">Roll No: #106 | Grade 2</p>
+                        <span id="studentProfileBadge" class="inline-block mt-1 text-[10px] bg-emerald-700/60 border border-emerald-500/30 px-2 py-0.5 rounded-md font-semibold">Status: Active & Paid</span>
+                    </div>
+                </div>
+
+                <!-- Attendance Summary & Quick Stats -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 text-center shadow-sm">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Overall Attendance</p>
+                        <p class="text-2xl font-extrabold text-eureka-green mt-1" id="studentAttendanceStat">0%</p>
+                        <p class="text-[10px] text-emerald-600 font-medium" id="studentAttendanceDetail">0/0 Days Attended</p>
+                    </div>
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 text-center shadow-sm">
+                        <p class="text-xs text-slate-400 font-semibold uppercase">Average Grade</p>
+                        <p class="text-2xl font-extrabold text-eureka-red mt-1" id="studentAvgGrade">N/A</p>
+                        <p class="text-[10px] text-red-600 font-medium" id="studentGradeRank">Pending Exam Results</p>
+                    </div>
+                </div>
+
+                <!-- Academic Grade Report Card -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-eureka-green"></i> Academic Performance Report
+                    </h3>
+                    <div id="studentGradesList" class="space-y-2 divide-y divide-slate-100">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Fee Payment Summary for Selected Student -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
+                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-amber-600"></i> Fee Payment History
+                    </h3>
+                    <div id="studentFeeHistory" class="space-y-2 text-xs">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Announcements / School Bulletin -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-bullhorn text-eureka-red"></i> School Announcements
+                    </h3>
+                    <div id="bulletinList" class="space-y-2.5">
+                        <!-- Dynamic Notices -->
+                    </div>
                 </div>
             </div>
 
-            <!-- Attendance Summary & Quick Stats -->
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 text-center shadow-sm">
-                    <p class="text-xs text-slate-400 font-semibold uppercase">Overall Attendance</p>
-                    <p class="text-2xl font-extrabold text-eureka-green mt-1" id="studentAttendanceStat">0%</p>
-                    <p class="text-[10px] text-emerald-600 font-medium" id="studentAttendanceDetail">0/0 Days Attended</p>
-                </div>
-                <div class="bg-white p-3.5 rounded-2xl border border-slate-200 text-center shadow-sm">
-                    <p class="text-xs text-slate-400 font-semibold uppercase">Average Grade</p>
-                    <p class="text-2xl font-extrabold text-eureka-red mt-1" id="studentAvgGrade">N/A</p>
-                    <p class="text-[10px] text-red-600 font-medium" id="studentGradeRank">Pending Exam Results</p>
-                </div>
-            </div>
+            <!-- Tab: Online Teaching -->
+            <div id="student-view-online-teaching" class="space-y-3 hidden">
+                <!-- Online Teaching Section -->
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h2 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-video text-eureka-green"></i> Online Teaching
+                            </h2>
+                            <p class="text-[11px] text-slate-400">View lessons and learning materials</p>
+                        </div>
+                    </div>
 
-            <!-- Academic Grade Report Card -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-graduation-cap text-eureka-green"></i> Academic Performance Report
-                </h3>
-                <div id="studentGradesList" class="space-y-2 divide-y divide-slate-100">
-                    <!-- Injected dynamically -->
-                </div>
-            </div>
+                    <!-- Subject Selection -->
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Select Subject</label>
+                        <select id="studentSubjectSelect" onchange="loadStudentLessons()" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green mt-1">
+                            <option value="">All Subjects</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Bangla">Bangla</option>
+                            <option value="English">English</option>
+                            <option value="Science">Science</option>
+                            <option value="Social Studies">Social Studies</option>
+                            <option value="Religion">Religion</option>
+                            <option value="Art & Craft">Art & Craft</option>
+                        </select>
+                    </div>
 
-            <!-- Fee Payment Summary for Selected Student -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-receipt text-amber-600"></i> Fee Payment History
-                </h3>
-                <div id="studentFeeHistory" class="space-y-2 text-xs">
-                    <!-- Injected dynamically -->
-                </div>
-            </div>
-
-            <!-- Announcements / School Bulletin -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
-                <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-bullhorn text-eureka-red"></i> School Announcements
-                </h3>
-                <div id="bulletinList" class="space-y-2.5">
-                    <!-- Dynamic Notices -->
+                    <!-- Lessons List -->
+                    <div id="studentLessonsList" class="space-y-2 pt-1">
+                        <!-- Dynamic lessons list -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -1025,6 +1111,128 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal 6: Add/Edit Lesson -->
+    <div id="modal-add-lesson" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-bold text-base text-slate-800" id="lessonModalTitle">Add New Lesson</h3>
+                    <p class="text-[11px] text-slate-400">Create lesson content for students</p>
+                </div>
+                <button onclick="toggleModal('modal-add-lesson', false)" class="text-slate-400 hover:text-slate-600 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="lessonForm" onsubmit="handleLessonSubmit(event)" class="space-y-3">
+                <input type="hidden" id="lessonId">
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Grade/Class</label>
+                        <select id="lessonClassId" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green mt-1">
+                            <option value="Grade 1">Grade 1</option>
+                            <option value="Grade 2">Grade 2</option>
+                            <option value="Grade 3">Grade 3</option>
+                            <option value="Grade 4">Grade 4</option>
+                            <option value="Grade 5">Grade 5</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Subject</label>
+                        <select id="lessonSubjectId" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green mt-1">
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Bangla">Bangla</option>
+                            <option value="English">English</option>
+                            <option value="Science">Science</option>
+                            <option value="Social Studies">Social Studies</option>
+                            <option value="Religion">Religion</option>
+                            <option value="Art & Craft">Art & Craft</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Topic Title</label>
+                    <input type="text" id="lessonTopicTitle" required placeholder="e.g., Introduction to Addition" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green mt-1">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Description (Optional)</label>
+                    <textarea id="lessonDescription" rows="2" placeholder="Brief description of the lesson topic..." class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-eureka-green mt-1"></textarea>
+                </div>
+
+                <!-- File Upload Section -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                    <label class="text-[11px] font-semibold text-slate-500 block">Upload Materials</label>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] font-semibold text-slate-400 block mb-1">File Type</label>
+                            <select id="attachmentType" class="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg outline-none">
+                                <option value="Recorded Voice">Recorded Voice</option>
+                                <option value="Video">Video Clip</option>
+                                <option value="PDF">PDF</option>
+                                <option value="DOCX">DOCX</option>
+                                <option value="Excel">Excel</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-semibold text-slate-400 block mb-1">Select Files</label>
+                            <input type="file" id="lessonFiles" multiple accept=".mp3,.wav,.mp4,.mov,.pdf,.docx,.xlsx" class="w-full text-xs p-1.5 bg-white border border-slate-200 rounded-lg outline-none">
+                        </div>
+                    </div>
+                    
+                    <div id="uploadedFilesList" class="space-y-1 text-[10px] text-slate-600">
+                        <!-- Uploaded files will be listed here -->
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="saveLessonAsDraft()" class="flex-1 bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl hover:bg-slate-300 transition touch-active">
+                        <i class="fa-solid fa-file-pen mr-1"></i> Save Draft
+                    </button>
+                    <button type="submit" class="flex-1 bg-eureka-green text-white font-bold text-xs py-3 rounded-xl shadow hover:bg-emerald-800 transition touch-active">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Publish
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 7: Lesson Viewer (Student/Teacher Preview) -->
+    <div id="modal-lesson-viewer" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-lg rounded-3xl p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h3 class="font-bold text-base text-slate-800" id="viewerLessonTitle">Lesson Topic</h3>
+                    <p class="text-[11px] text-slate-400" id="viewerLessonMeta">Grade 2 • Mathematics</p>
+                </div>
+                <button onclick="toggleModal('modal-lesson-viewer', false)" class="text-slate-400 hover:text-slate-600 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div id="viewerLessonDescription" class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl">
+                <!-- Lesson description -->
+            </div>
+
+            <div>
+                <h4 class="text-[11px] font-bold text-slate-700 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-paperclip text-eureka-green"></i> Lesson Materials
+                </h4>
+                <div id="viewerAttachmentsList" class="space-y-2">
+                    <!-- Dynamic attachments -->
+                </div>
+            </div>
+
+            <div class="text-[10px] text-slate-400 pt-2 border-t flex justify-between">
+                <span id="viewerTeacherName">Teacher: --</span>
+                <span id="viewerPublishedDate">Published: --</span>
+            </div>
         </div>
     </div>
 
@@ -2989,6 +3197,391 @@
         window.saveAttendance = saveAttendance;
         window.refreshAndPersistDatabase = refreshAndPersistDatabase;
         window.testBackendConnection = testBackendConnection;
+
+        // Teacher Tab Switching
+        function switchTeacherTab(tabName) {
+            ['attendance', 'gradebook', 'online-teaching'].forEach(t => {
+                const tabEl = document.getElementById(`teacher-view-${t}`);
+                if (tabEl) tabEl.classList.add('hidden');
+                const btn = document.getElementById(`teacher-tab-${t}`);
+                if (btn) btn.classList.remove('bg-white', 'text-emerald-800', 'shadow-sm');
+            });
+
+            const activeTab = document.getElementById(`teacher-view-${tabName}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            const activeBtn = document.getElementById(`teacher-tab-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('bg-white', 'text-emerald-800', 'shadow-sm');
+
+            if (tabName === 'online-teaching') {
+                loadTeacherLessons();
+            }
+        }
+
+        // Student Tab Switching
+        function switchStudentTab(tabName) {
+            ['profile', 'online-teaching'].forEach(t => {
+                const tabEl = document.getElementById(`student-view-${t}`);
+                if (tabEl) tabEl.classList.add('hidden');
+                const btn = document.getElementById(`student-tab-${t}`);
+                if (btn) btn.classList.remove('bg-white', 'text-emerald-800', 'shadow-sm');
+            });
+
+            const activeTab = document.getElementById(`student-view-${tabName}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            const activeBtn = document.getElementById(`student-tab-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('bg-white', 'text-emerald-800', 'shadow-sm');
+
+            if (tabName === 'online-teaching') {
+                loadStudentLessons();
+            }
+        }
+
+        // Lesson Tab Switching (Drafts/Published)
+        let currentLessonTab = 'drafts';
+        function switchLessonTab(tabName) {
+            currentLessonTab = tabName;
+            ['drafts', 'published'].forEach(t => {
+                const btn = document.getElementById(`lesson-tab-${t}`);
+                if (btn) btn.classList.remove('bg-white', 'text-emerald-800', 'shadow-sm');
+            });
+
+            const activeBtn = document.getElementById(`lesson-tab-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('bg-white', 'text-emerald-800', 'shadow-sm');
+
+            loadTeacherLessons();
+        }
+
+        // Open Add Lesson Modal
+        function openAddLessonModal(lessonId = null) {
+            document.getElementById('lessonModalTitle').innerText = lessonId ? 'Edit Lesson' : 'Add New Lesson';
+            document.getElementById('lessonId').value = lessonId || '';
+            document.getElementById('lessonClassId').value = 'Grade 1';
+            document.getElementById('lessonSubjectId').value = 'Mathematics';
+            document.getElementById('lessonTopicTitle').value = '';
+            document.getElementById('lessonDescription').value = '';
+            document.getElementById('lessonFiles').value = '';
+            document.getElementById('uploadedFilesList').innerHTML = '';
+            
+            if (lessonId) {
+                // Load existing lesson data for editing
+                loadLessonForEdit(lessonId);
+            }
+            
+            toggleModal('modal-add-lesson', true);
+        }
+
+        // Load lesson for editing
+        async function loadLessonForEdit(lessonId) {
+            try {
+                const apiUrl = window.getActiveApiUrl();
+                const res = await fetch(`${apiUrl}/api/lessons/${lessonId}`);
+                const data = await res.json();
+                
+                if (data.success && data.lesson) {
+                    const lesson = data.lesson;
+                    document.getElementById('lessonClassId').value = lesson.classId;
+                    document.getElementById('lessonSubjectId').value = lesson.subjectId;
+                    document.getElementById('lessonTopicTitle').value = lesson.topicTitle;
+                    document.getElementById('lessonDescription').value = lesson.description || '';
+                    
+                    // Display existing files
+                    const filesList = document.getElementById('uploadedFilesList');
+                    filesList.innerHTML = lesson.files.map(f => `
+                        <div class="flex items-center justify-between bg-white p-1.5 rounded-lg border border-slate-200">
+                            <span class="truncate">${f.fileName}</span>
+                            <span class="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded">${f.attachmentType}</span>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Error loading lesson:', err);
+                showToast('Failed to load lesson');
+            }
+        }
+
+        // Handle Lesson Submit (Publish)
+        async function handleLessonSubmit(event) {
+            event.preventDefault();
+            
+            const lessonId = document.getElementById('lessonId').value;
+            const classId = document.getElementById('lessonClassId').value;
+            const subjectId = document.getElementById('lessonSubjectId').value;
+            const topicTitle = document.getElementById('lessonTopicTitle').value;
+            const description = document.getElementById('lessonDescription').value;
+            const files = document.getElementById('lessonFiles').files;
+            const attachmentType = document.getElementById('attachmentType').value;
+            
+            // Default teacher ID (in real app, this would come from authentication)
+            const createdBy = 1;
+            
+            try {
+                const apiUrl = window.getActiveApiUrl();
+                
+                let lesson;
+                if (lessonId) {
+                    // Update existing lesson
+                    const res = await fetch(`${apiUrl}/api/lessons/${lessonId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ classId, subjectId, topicTitle, description, publishStatus: 'Published' })
+                    });
+                    const data = await res.json();
+                    lesson = data.lesson;
+                } else {
+                    // Create new lesson
+                    const res = await fetch(`${apiUrl}/api/lessons`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ classId, subjectId, topicTitle, description, createdBy, publishStatus: 'Published' })
+                    });
+                    const data = await res.json();
+                    lesson = data.lesson;
+                }
+                
+                // Upload files if any
+                if (files.length > 0) {
+                    const formData = new FormData();
+                    formData.append('attachmentType', attachmentType);
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append('files', files[i]);
+                    }
+                    
+                    await fetch(`${apiUrl}/api/lessons/${lesson.lessonId}/files`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+                
+                toggleModal('modal-add-lesson', false);
+                showToast('Lesson published successfully!');
+                loadTeacherLessons();
+            } catch (err) {
+                console.error('Error publishing lesson:', err);
+                showToast('Failed to publish lesson');
+            }
+        }
+
+        // Save Lesson as Draft
+        async function saveLessonAsDraft() {
+            const classId = document.getElementById('lessonClassId').value;
+            const subjectId = document.getElementById('lessonSubjectId').value;
+            const topicTitle = document.getElementById('lessonTopicTitle').value;
+            const description = document.getElementById('lessonDescription').value;
+            const files = document.getElementById('lessonFiles').files;
+            const attachmentType = document.getElementById('attachmentType').value;
+            const createdBy = 1;
+            
+            try {
+                const apiUrl = window.getActiveApiUrl();
+                
+                const res = await fetch(`${apiUrl}/api/lessons`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ classId, subjectId, topicTitle, description, createdBy, publishStatus: 'Draft' })
+                });
+                const data = await res.json();
+                const lesson = data.lesson;
+                
+                // Upload files if any
+                if (files.length > 0) {
+                    const formData = new FormData();
+                    formData.append('attachmentType', attachmentType);
+                    for (let i = 0; i < files.length; i++) {
+                        formData.append('files', files[i]);
+                    }
+                    
+                    await fetch(`${apiUrl}/api/lessons/${lesson.lessonId}/files`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+                
+                toggleModal('modal-add-lesson', false);
+                showToast('Lesson saved as draft!');
+                loadTeacherLessons();
+            } catch (err) {
+                console.error('Error saving draft:', err);
+                showToast('Failed to save draft');
+            }
+        }
+
+        // Load Teacher Lessons
+        async function loadTeacherLessons() {
+            try {
+                const apiUrl = window.getActiveApiUrl();
+                const publishStatus = currentLessonTab === 'drafts' ? 'Draft' : 'Published';
+                const res = await fetch(`${apiUrl}/api/lessons?publishStatus=${publishStatus}&teacherId=1`);
+                const data = await res.json();
+                
+                const container = document.getElementById('lessonsListContainer');
+                
+                if (data.success && data.lessons.length > 0) {
+                    container.innerHTML = data.lessons.map(lesson => renderLessonCard(lesson, true)).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2"></i>
+                            <p class="text-xs">No ${currentLessonTab === 'drafts' ? 'draft' : 'published'} lessons yet</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('Error loading lessons:', err);
+                showToast('Failed to load lessons');
+            }
+        }
+
+        // Load Student Lessons
+        async function loadStudentLessons() {
+            try {
+                const apiUrl = window.getActiveApiUrl();
+                const subjectId = document.getElementById('studentSubjectSelect').value;
+                const studentGrade = window.activeStudentGrade || 'Grade 1';
+                
+                let url = `${apiUrl}/api/lessons?publishStatus=Published&classId=${studentGrade}`;
+                if (subjectId) {
+                    url += `&subjectId=${subjectId}`;
+                }
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                const container = document.getElementById('studentLessonsList');
+                
+                if (data.success && data.lessons.length > 0) {
+                    container.innerHTML = data.lessons.map(lesson => renderLessonCard(lesson, false)).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-book-open text-3xl mb-2"></i>
+                            <p class="text-xs">No lessons available for this subject</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error('Error loading student lessons:', err);
+                showToast('Failed to load lessons');
+            }
+        }
+
+        // Render Lesson Card
+        function renderLessonCard(lesson, isTeacher) {
+            const statusBadge = lesson.publishStatus === 'Published' 
+                ? '<span class="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">Published</span>'
+                : '<span class="text-[9px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-semibold">Draft</span>';
+            
+            const fileCount = lesson.files ? lesson.files.length : 0;
+            
+            return `
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 hover:border-eureka-green transition cursor-pointer" onclick="viewLesson(${lesson.lessonId})">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <h4 class="text-xs font-bold text-slate-800 leading-tight">${lesson.topicTitle}</h4>
+                            <p class="text-[10px] text-slate-500 mt-1">${lesson.classId} • ${lesson.subjectId}</p>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5 text-[10px] text-slate-400">
+                            <i class="fa-solid fa-paperclip"></i>
+                            <span>${fileCount} file${fileCount !== 1 ? 's' : ''}</span>
+                        </div>
+                        ${isTeacher && lesson.publishStatus === 'Draft' ? `
+                            <button onclick="event.stopPropagation(); openAddLessonModal(${lesson.lessonId})" class="text-[10px] text-eureka-green hover:text-emerald-700 font-semibold">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // View Lesson (Open Viewer Modal)
+        async function viewLesson(lessonId) {
+            try {
+                const apiUrl = window.getActiveApiUrl();
+                const res = await fetch(`${apiUrl}/api/lessons/${lessonId}`);
+                const data = await res.json();
+                
+                if (data.success && data.lesson) {
+                    const lesson = data.lesson;
+                    
+                    document.getElementById('viewerLessonTitle').innerText = lesson.topicTitle;
+                    document.getElementById('viewerLessonMeta').innerText = `${lesson.classId} • ${lesson.subjectId}`;
+                    document.getElementById('viewerLessonDescription').innerText = lesson.description || 'No description provided.';
+                    document.getElementById('viewerPublishedDate').innerText = `Published: ${lesson.publishedAt ? new Date(lesson.publishedAt).toLocaleDateString() : 'N/A'}`;
+                    
+                    // Get teacher name (in real app, fetch from staff data)
+                    document.getElementById('viewerTeacherName').innerText = 'Teacher: Staff Member';
+                    
+                    // Render attachments
+                    const attachmentsList = document.getElementById('viewerAttachmentsList');
+                    if (lesson.files && lesson.files.length > 0) {
+                        attachmentsList.innerHTML = lesson.files.map(file => renderAttachment(file)).join('');
+                    } else {
+                        attachmentsList.innerHTML = '<p class="text-[10px] text-slate-400">No materials attached</p>';
+                    }
+                    
+                    toggleModal('modal-lesson-viewer', true);
+                }
+            } catch (err) {
+                console.error('Error viewing lesson:', err);
+                showToast('Failed to load lesson');
+            }
+        }
+
+        // Render Attachment
+        function renderAttachment(file) {
+            const fileUrl = window.getActiveApiUrl() + file.fileUrl;
+            let icon, player;
+            
+            switch (file.attachmentType) {
+                case 'Recorded Voice':
+                    icon = 'fa-volume-high';
+                    player = `<audio controls class="w-full h-8" src="${fileUrl}"></audio>`;
+                    break;
+                case 'Video':
+                    icon = 'fa-video';
+                    player = `<video controls class="w-full h-32 rounded-lg" src="${fileUrl}"></video>`;
+                    break;
+                case 'PDF':
+                    icon = 'fa-file-pdf';
+                    player = `<a href="${fileUrl}" target="_blank" class="text-[10px] text-eureka-green hover:underline flex items-center gap-1"><i class="fa-solid fa-external-link"></i> Open PDF</a>`;
+                    break;
+                case 'DOCX':
+                    icon = 'fa-file-word';
+                    player = `<a href="${fileUrl}" target="_blank" class="text-[10px] text-blue-600 hover:underline flex items-center gap-1"><i class="fa-solid fa-external-link"></i> Open Document</a>`;
+                    break;
+                case 'Excel':
+                    icon = 'fa-file-excel';
+                    player = `<a href="${fileUrl}" target="_blank" class="text-[10px] text-green-600 hover:underline flex items-center gap-1"><i class="fa-solid fa-external-link"></i> Open Spreadsheet</a>`;
+                    break;
+                default:
+                    icon = 'fa-file';
+                    player = `<a href="${fileUrl}" target="_blank" class="text-[10px] text-slate-600 hover:underline flex items-center gap-1"><i class="fa-solid fa-external-link"></i> Open File</a>`;
+            }
+            
+            return `
+                <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fa-solid ${icon} text-eureka-green text-sm"></i>
+                        <span class="text-xs font-medium text-slate-700 truncate flex-1">${file.fileName}</span>
+                    </div>
+                    ${player}
+                </div>
+            `;
+        }
+
+        // Make functions globally available
+        window.switchTeacherTab = switchTeacherTab;
+        window.switchStudentTab = switchStudentTab;
+        window.switchLessonTab = switchLessonTab;
+        window.openAddLessonModal = openAddLessonModal;
+        window.handleLessonSubmit = handleLessonSubmit;
+        window.saveLessonAsDraft = saveLessonAsDraft;
+        window.loadTeacherLessons = loadTeacherLessons;
+        window.loadStudentLessons = loadStudentLessons;
+        window.viewLesson = viewLesson;
         window.exportDataBackup = exportDataBackup;
         window.importDataBackup = importDataBackup;
         window.resetToDefaultData = resetToDefaultData;

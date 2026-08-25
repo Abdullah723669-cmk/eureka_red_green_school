@@ -762,6 +762,117 @@
                     <button type="submit" class="w-full bg-slate-800 text-white text-xs font-bold py-3 rounded-xl hover:bg-black transition touch-active">Save Grade Entry</button>
                 </form>
             </div>
+
+            <!-- Today's Online Lesson — Post Panel -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                        <i class="fa-solid fa-chalkboard text-sm"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-sm text-slate-800 leading-tight">Post Today's Online Lesson</h2>
+                        <p class="text-[10px] text-slate-400">Share study material — PDF, Word, Excel, Video, Audio or Image</p>
+                    </div>
+                </div>
+
+                <form id="lessonForm" onsubmit="handlePostLesson(event)" class="space-y-2.5">
+                    <!-- Row 1: Grade + Subject -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Class / Grade</label>
+                            <select id="lessonGrade" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Grade 1">Grade 1</option>
+                                <option value="Grade 2">Grade 2</option>
+                                <option value="Grade 3">Grade 3</option>
+                                <option value="Grade 4">Grade 4</option>
+                                <option value="Grade 5">Grade 5</option>
+                                <option value="All Classes">All Classes</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Subject</label>
+                            <select id="lessonSubject" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Bangla">Bangla</option>
+                                <option value="English">English</option>
+                                <option value="Science">Science</option>
+                                <option value="Social Studies">Social Studies</option>
+                                <option value="Religion">Religion</option>
+                                <option value="Art & Craft">Art & Craft</option>
+                                <option value="General Knowledge">General Knowledge</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Lesson Title -->
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Lesson Title</label>
+                        <input type="text" id="lessonTitle" required placeholder="e.g., Chapter 4 — Fractions & Decimals" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Row 3: Description -->
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Description / Instructions</label>
+                        <textarea id="lessonDescription" rows="2" placeholder="Brief note for students — what to study, what to practice..." class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 resize-none"></textarea>
+                    </div>
+
+                    <!-- Row 4: File Type + File URL -->
+                    <div class="grid grid-cols-5 gap-2">
+                        <div class="col-span-2">
+                            <label class="text-[11px] font-semibold text-slate-500">File / Media Type</label>
+                            <select id="lessonFileType" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="pdf">📄 PDF Document</option>
+                                <option value="doc">📝 Word / DOCX</option>
+                                <option value="excel">📊 Excel / Spreadsheet</option>
+                                <option value="video">🎬 Video Clip</option>
+                                <option value="audio">🎵 Audio Clip</option>
+                                <option value="image">🖼️ Image</option>
+                                <option value="link">🔗 Web Link</option>
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <label class="text-[11px] font-semibold text-slate-500">File URL / Link</label>
+                            <input type="url" id="lessonFileUrl" placeholder="https://drive.google.com/..." class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Row 5: Posted By + Date -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Posted By (Teacher)</label>
+                            <input type="text" id="lessonPostedBy" placeholder="Your name" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-semibold text-slate-500">Lesson Date</label>
+                            <input type="date" id="lessonDate" required class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold py-3 rounded-xl shadow hover:from-blue-700 hover:to-indigo-700 transition touch-active flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i> Publish Lesson to Students
+                    </button>
+                </form>
+            </div>
+
+            <!-- Posted Lessons Feed (Teacher view) -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open-reader text-blue-600"></i> Published Lessons
+                    </h3>
+                    <select id="teacherLessonGradeFilter" onchange="renderTeacherLessonsFeed()" class="text-xs py-1.5 px-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none text-slate-700 font-semibold">
+                        <option value="ALL">All Classes</option>
+                        <option value="Grade 1">Grade 1</option>
+                        <option value="Grade 2">Grade 2</option>
+                        <option value="Grade 3">Grade 3</option>
+                        <option value="Grade 4">Grade 4</option>
+                        <option value="Grade 5">Grade 5</option>
+                    </select>
+                </div>
+                <div id="teacherLessonsContainer" class="space-y-2 divide-y divide-slate-100">
+                    <!-- Dynamic lesson cards -->
+                </div>
+            </div>
         </section>
 
         <!-- 3. STUDENT / PARENT VIEW -->
@@ -829,6 +940,41 @@
                 </h3>
                 <div id="bulletinList" class="space-y-2.5">
                     <!-- Dynamic Notices -->
+                </div>
+            </div>
+
+            <!-- Today's Online Lessons Feed -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+                <!-- Header -->
+                <div class="flex items-center gap-2.5 pb-2 border-b border-slate-100">
+                    <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-sm shrink-0">
+                        <i class="fa-solid fa-chalkboard text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-800 leading-tight">Today's Online Lessons</h3>
+                        <p class="text-[10px] text-slate-400">Study materials posted by your teachers</p>
+                    </div>
+                </div>
+
+                <!-- Filters: Subject + Date -->
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="studentLessonSubjectFilter" onchange="renderStudentLessonsFeed()" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-semibold text-slate-600">
+                        <option value="ALL">All Subjects</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Bangla">Bangla</option>
+                        <option value="English">English</option>
+                        <option value="Science">Science</option>
+                        <option value="Social Studies">Social Studies</option>
+                        <option value="Religion">Religion</option>
+                        <option value="Art & Craft">Art & Craft</option>
+                        <option value="General Knowledge">General Knowledge</option>
+                    </select>
+                    <input type="date" id="studentLessonDateFilter" onchange="renderStudentLessonsFeed()" class="w-full text-xs p-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-600">
+                </div>
+
+                <!-- Lesson Cards -->
+                <div id="studentLessonsContainer" class="space-y-3">
+                    <!-- Dynamically rendered lesson cards -->
                 </div>
             </div>
         </section>
@@ -1133,6 +1279,7 @@
             transactions: [],
             expenses: [],
             notices: [],
+            lessons: [],
             attendance: {}
         };
 
@@ -1243,6 +1390,17 @@
                     window.renderAllData();
                 }
             }, (err) => console.error("Notices sync error:", err));
+
+            onSnapshot(publicPath('lessons'), (snapshot) => {
+                const list = [];
+                snapshot.forEach(doc => list.push({ docId: doc.id, ...doc.data() }));
+                if (list.length === 0) {
+                    seedDefaultLessons(publicPath('lessons'));
+                } else {
+                    window.appData.lessons = list;
+                    window.renderAllData();
+                }
+            }, (err) => console.error("Lessons sync error:", err));
         }
 
         async function seedDefaultStudents(colRef) {
@@ -1306,6 +1464,18 @@
             const defaults = [
                 { title: "Independence Cultural Week", content: "Preparations start next Monday. Parents are invited for art showcase.", date: "Aug 14, 2026" },
                 { title: "Term 2 Examination Schedule", content: "Final examinations start from September 10th. Routine published.", date: "Aug 12, 2026" }
+            ];
+            for (const item of defaults) {
+                await addDoc(colRef, item);
+            }
+        }
+
+        async function seedDefaultLessons(colRef) {
+            const defaults = [
+                { grade: "Grade 2", subject: "Mathematics", title: "Addition & Subtraction — Chapter 3", description: "Practice double-digit addition and borrowing in subtraction. Follow along with the worksheet.", fileType: "pdf", fileUrl: "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1", postedBy: "Rashid Khan", date: "2026-08-25" },
+                { grade: "Grade 3", subject: "English", title: "Reading Comprehension — The Lion and the Mouse", description: "Read the passage carefully and answer questions at the end. Audio version included.", fileType: "audio", fileUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", postedBy: "Nusrat Jahan", date: "2026-08-25" },
+                { grade: "Grade 1", subject: "Science", title: "Parts of a Plant — Video Lesson", description: "Watch the short video explaining roots, stems, leaves and flowers with colorful diagrams.", fileType: "video", fileUrl: "https://www.youtube.com/watch?v=g-h9jHMESbY", postedBy: "Rashid Khan", date: "2026-08-24" },
+                { grade: "Grade 2", subject: "Bangla", title: "বর্ণমালা অনুশীলন — ব্যঞ্জনবর্ণ", description: "আজকের পাঠে ব্যঞ্জনবর্ণের লেখা ও উচ্চারণ অনুশীলন করো। ছবিসহ ওয়ার্কশিট দেখো।", fileType: "image", fileUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bangla_Alphabet.svg/1200px-Bangla_Alphabet.svg.png", postedBy: "Nusrat Jahan", date: "2026-08-24" }
             ];
             for (const item of defaults) {
                 await addDoc(colRef, item);
@@ -1397,6 +1567,7 @@
                                 transactions: remote.transactions || [],
                                 expenses: remote.expenses || [],
                                 notices: remote.notices || [],
+                                lessons: remote.lessons || [],
                                 attendance: remote.attendance || window.appData.attendance || {}
                             };
 
@@ -1522,6 +1693,12 @@
                 { title: "Independence Cultural Week", content: "Preparations start next Monday. Parents are invited for art showcase.", date: "Aug 14, 2026" },
                 { title: "Term 2 Examination Schedule", content: "Final examinations start from September 10th. Routine published.", date: "Aug 12, 2026" }
             ];
+            window.appData.lessons = [
+                { grade: "Grade 2", subject: "Mathematics", title: "Addition & Subtraction — Chapter 3", description: "Practice double-digit addition and borrowing in subtraction.", fileType: "pdf", fileUrl: "https://www.w3.org/WAI/WCAG21/Techniques/pdf/PDF1", postedBy: "Rashid Khan", date: "2026-08-25" },
+                { grade: "Grade 3", subject: "English", title: "Reading Comprehension — The Lion and the Mouse", description: "Read the passage and answer the questions at the end.", fileType: "audio", fileUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", postedBy: "Nusrat Jahan", date: "2026-08-25" },
+                { grade: "Grade 1", subject: "Science", title: "Parts of a Plant — Video Lesson", description: "Watch the short video explaining roots, stems, leaves and flowers.", fileType: "video", fileUrl: "https://www.youtube.com/watch?v=g-h9jHMESbY", postedBy: "Rashid Khan", date: "2026-08-24" },
+                { grade: "Grade 2", subject: "Bangla", title: "বর্ণমালা অনুশীলন — ব্যঞ্জনবর্ণ", description: "আজকের পাঠে ব্যঞ্জনবর্ণের লেখা ও উচ্চারণ অনুশীলন করো।", fileType: "image", fileUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bangla_Alphabet.svg/1200px-Bangla_Alphabet.svg.png", postedBy: "Nusrat Jahan", date: "2026-08-24" }
+            ];
             window.activeStudentId = 106;
             window.saveLocalState();
             if (typeof window.renderAllData === 'function') window.renderAllData();
@@ -1556,6 +1733,9 @@
                 window.appData.expenses.unshift(payload);
             } else if (colName === 'notices') {
                 window.appData.notices.unshift(payload);
+            } else if (colName === 'lessons') {
+                if (!window.appData.lessons) window.appData.lessons = [];
+                window.appData.lessons.unshift(payload);
             } else if (colName === 'attendance') {
                 if (!window.appData.attendance) window.appData.attendance = {};
                 if (payload && payload.date) {
@@ -1644,6 +1824,8 @@
             if (sjDateEl) sjDateEl.value = today;
             const stjDateEl = document.getElementById('newStaffJoiningDate');
             if (stjDateEl) stjDateEl.value = today;
+            const lessonDateEl = document.getElementById('lessonDate');
+            if (lessonDateEl) lessonDateEl.value = today;
 
             if (window.isAdminAuthenticated) {
                 switchRole('admin');
@@ -2403,6 +2585,10 @@
             if (window.activeStudentId) {
                 renderStudentPortalView(window.activeStudentId);
             }
+
+            // Render lesson feeds
+            if (typeof renderTeacherLessonsFeed === 'function') renderTeacherLessonsFeed();
+            if (typeof renderStudentLessonsFeed === 'function') renderStudentLessonsFeed();
         }
 
         function renderFeeHistory() {
@@ -2843,6 +3029,124 @@
             e.target.reset();
         }
 
+        // ─── LESSONS ────────────────────────────────────────────────────────────────
+
+        async function handlePostLesson(e) {
+            e.preventDefault();
+            const grade       = document.getElementById('lessonGrade').value;
+            const subject     = document.getElementById('lessonSubject').value;
+            const title       = document.getElementById('lessonTitle').value.trim();
+            const description = (document.getElementById('lessonDescription').value || '').trim();
+            const fileType    = document.getElementById('lessonFileType').value;
+            const fileUrl     = (document.getElementById('lessonFileUrl').value || '').trim();
+            const postedBy    = (document.getElementById('lessonPostedBy').value || '').trim() || 'Teacher';
+            const dateEl      = document.getElementById('lessonDate');
+            const date        = dateEl && dateEl.value ? dateEl.value : new Date().toISOString().split('T')[0];
+
+            if (!title) return;
+
+            const payload = { grade, subject, title, description, fileType, fileUrl, postedBy, date };
+            await window.saveToCloud('lessons', payload);
+            showToast(`📚 Lesson published for ${grade} — ${subject}`);
+            e.target.reset();
+            if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+        }
+
+        // File-type icon + colour helpers
+        function getLessonFileStyle(fileType) {
+            const map = {
+                pdf:   { icon: 'fa-file-pdf',        bg: 'bg-red-100',    text: 'text-red-600',    label: 'PDF' },
+                doc:   { icon: 'fa-file-word',        bg: 'bg-blue-100',   text: 'text-blue-600',   label: 'DOCX' },
+                excel: { icon: 'fa-file-excel',       bg: 'bg-green-100',  text: 'text-green-600',  label: 'Excel' },
+                video: { icon: 'fa-circle-play',      bg: 'bg-purple-100', text: 'text-purple-600', label: 'Video' },
+                audio: { icon: 'fa-headphones',       bg: 'bg-amber-100',  text: 'text-amber-600',  label: 'Audio' },
+                image: { icon: 'fa-image',            bg: 'bg-pink-100',   text: 'text-pink-600',   label: 'Image' },
+                link:  { icon: 'fa-link',             bg: 'bg-teal-100',   text: 'text-teal-600',   label: 'Link' },
+            };
+            return map[fileType] || map['link'];
+        }
+
+        function buildLessonCard(lesson) {
+            const fs = getLessonFileStyle(lesson.fileType);
+            const hasLink = lesson.fileUrl && lesson.fileUrl.trim();
+            const openAttr = hasLink
+                ? `href="${lesson.fileUrl}" target="_blank" rel="noopener noreferrer"`
+                : '';
+            const mediaBlock = lesson.fileType === 'video' && hasLink
+                ? `<div class="mt-2 rounded-xl overflow-hidden">
+                     <iframe src="${lesson.fileUrl.replace('watch?v=', 'embed/')}" class="w-full h-40 rounded-xl border-0" allowfullscreen loading="lazy"></iframe>
+                   </div>`
+                : lesson.fileType === 'audio' && hasLink
+                ? `<audio controls class="w-full mt-2 h-9 rounded-xl" src="${lesson.fileUrl}"></audio>`
+                : lesson.fileType === 'image' && hasLink
+                ? `<img src="${lesson.fileUrl}" alt="${lesson.title}" class="w-full mt-2 rounded-xl object-cover max-h-48" loading="lazy">`
+                : '';
+
+            return `
+            <div class="pt-3 space-y-2">
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-xl ${fs.bg} ${fs.text} flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid ${fs.icon} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">${lesson.grade}</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${lesson.subject}</span>
+                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${fs.bg} ${fs.text}">${fs.label}</span>
+                        </div>
+                        <p class="font-bold text-xs text-slate-800 mt-1 leading-snug">${lesson.title}</p>
+                        ${lesson.description ? `<p class="text-[11px] text-slate-500 leading-snug mt-0.5">${lesson.description}</p>` : ''}
+                        ${mediaBlock}
+                        <div class="flex items-center justify-between mt-1.5 flex-wrap gap-1.5">
+                            <span class="text-[10px] text-slate-400"><i class="fa-solid fa-user-tie text-[9px]"></i> ${lesson.postedBy || 'Teacher'} &bull; 📅 ${lesson.date}</span>
+                            ${hasLink ? `<a ${openAttr} class="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg touch-active transition">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Open ${fs.label}
+                            </a>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderTeacherLessonsFeed() {
+            const gradeFilter = document.getElementById('teacherLessonGradeFilter')?.value || 'ALL';
+            let list = [...(window.appData.lessons || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            if (gradeFilter !== 'ALL') list = list.filter(l => l.grade === gradeFilter || l.grade === 'All Classes');
+
+            const container = document.getElementById('teacherLessonsContainer');
+            if (!container) return;
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">No lessons published yet. Use the form above to post one.</p>`;
+                return;
+            }
+            container.innerHTML = list.map(buildLessonCard).join('');
+        }
+
+        function renderStudentLessonsFeed() {
+            const subjectFilter = document.getElementById('studentLessonSubjectFilter')?.value || 'ALL';
+            const dateFilter    = document.getElementById('studentLessonDateFilter')?.value || '';
+
+            // Determine the active student's grade for auto-filtering
+            const activeStudent = (window.appData.students || []).find(s => s.id === window.activeStudentId);
+            const studentGrade  = activeStudent ? activeStudent.grade : null;
+
+            let list = [...(window.appData.lessons || [])].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+            // Auto-filter to student's own grade + "All Classes" lessons
+            if (studentGrade) list = list.filter(l => l.grade === studentGrade || l.grade === 'All Classes');
+
+            if (subjectFilter !== 'ALL') list = list.filter(l => l.subject === subjectFilter);
+            if (dateFilter) list = list.filter(l => l.date === dateFilter);
+
+            const container = document.getElementById('studentLessonsContainer');
+            if (!container) return;
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">No lessons posted for your class yet. Check back soon! 📖</p>`;
+                return;
+            }
+            container.innerHTML = list.map(buildLessonCard).join('');
+        }
+
         function toggleAttendance(studentId, isPresent) {
             const today = new Date().toISOString().split('T')[0];
             if (!window.appData.attendance) window.appData.attendance = {};
@@ -3053,6 +3357,9 @@
         window.clearExpenseFilters = clearExpenseFilters;
         window.handlePostNotice = handlePostNotice;
         window.handleGradeSubmit = handleGradeSubmit;
+        window.handlePostLesson = handlePostLesson;
+        window.renderTeacherLessonsFeed = renderTeacherLessonsFeed;
+        window.renderStudentLessonsFeed = renderStudentLessonsFeed;
         window.toggleAttendance = toggleAttendance;
         window.saveAttendance = saveAttendance;
         window.refreshAndPersistDatabase = refreshAndPersistDatabase;

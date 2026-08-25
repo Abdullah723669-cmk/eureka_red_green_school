@@ -2,10 +2,36 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // Enable CORS for all origins and headers
 app.use(cors({
@@ -14,6 +40,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+app.use('/uploads', express.static(uploadsDir));
 
 // 1. Get All Data
 app.get('/api/data', async (req, res) => {
@@ -256,6 +283,184 @@ app.get('/api/attendance', async (req, res) => {
     res.json({ success: true, records });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch attendance" });
+  }
+});
+
+// 9. Online Teaching - Lessons API
+
+// GET /api/lessons - Get lessons with optional filters
+app.get('/api/lessons', async (req, res) => {
+  try {
+    const { classId, subjectId, teacherId, publishStatus } = req.query;
+    
+    const where = {};
+    if (classId) where.classId = classId;
+    if (subjectId) where.subjectId = subjectId;
+    if (teacherId) where.createdBy = Number(teacherId);
+    if (publishStatus) where.publishStatus = publishStatus;
+
+    const lessons = await prisma.lesson.findMany({
+      where,
+      include: { files: true },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ success: true, lessons });
+  } catch (err) {
+    console.error("Error fetching lessons:", err);
+    res.status(500).json({ error: "Failed to fetch lessons" });
+  }
+});
+
+// GET /api/lessons/:id - Get single lesson
+app.get('/api/lessons/:id', async (req, res) => {
+  try {
+    const lesson = await prisma.lesson.findUnique({
+      where: { lessonId: Number(req.params.id) },
+      include: { files: true }
+    });
+
+    if (!lesson) {
+      return res.status(404).json({ error: "Lesson not found" });
+    }
+
+    res.json({ success: true, lesson });
+  } catch (err) {
+    console.error("Error fetching lesson:", err);
+    res.status(500).json({ error: "Failed to fetch lesson" });
+  }
+});
+
+// POST /api/lessons - Create new lesson
+app.post('/api/lessons', async (req, res) => {
+  try {
+    const { classId, subjectId, topicTitle, description, createdBy, publishStatus } = req.body;
+
+    const maxLesson = await prisma.lesson.aggregate({ _max: { lessonId: true } });
+    const lessonId = (maxLesson._max.lessonId || 0) + 1;
+
+    const lesson = await prisma.lesson.create({
+      data: {
+        lessonId,
+        classId,
+        subjectId,
+        topicTitle,
+        description: description || null,
+        createdBy: Number(createdBy),
+        publishStatus: publishStatus || 'Draft',
+        publishedAt: publishStatus === 'Published' ? new Date() : null
+      },
+      include: { files: true }
+    });
+
+    res.json({ success: true, lesson });
+  } catch (err) {
+    console.error("Error creating lesson:", err);
+    res.status(500).json({ error: "Failed to create lesson" });
+  }
+});
+
+// PUT /api/lessons/:id - Update lesson
+app.put('/api/lessons/:id', async (req, res) => {
+  try {
+    const { classId, subjectId, topicTitle, description, publishStatus } = req.body;
+    
+    const updateData = {};
+    if (classId !== undefined) updateData.classId = classId;
+    if (subjectId !== undefined) updateData.subjectId = subjectId;
+    if (topicTitle !== undefined) updateData.topicTitle = topicTitle;
+    if (description !== undefined) updateData.description = description;
+    if (publishStatus !== undefined) {
+      updateData.publishStatus = publishStatus;
+      updateData.publishedAt = publishStatus === 'Published' ? new Date() : null;
+    }
+
+    const lesson = await prisma.lesson.update({
+      where: { lessonId: Number(req.params.id) },
+      data: updateData,
+      include: { files: true }
+    });
+
+    res.json({ success: true, lesson });
+  } catch (err) {
+    console.error("Error updating lesson:", err);
+    res.status(500).json({ error: "Failed to update lesson" });
+  }
+});
+
+// DELETE /api/lessons/:id - Delete lesson
+app.delete('/api/lessons/:id', async (req, res) => {
+  try {
+    await prisma.lesson.delete({
+      where: { lessonId: Number(req.params.id) }
+    });
+
+    res.json({ success: true, message: "Lesson deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting lesson:", err);
+    res.status(500).json({ error: "Failed to delete lesson" });
+  }
+});
+
+// POST /api/lessons/:id/files - Upload files for lesson
+app.post('/api/lessons/:id/files', upload.array('files', 10), async (req, res) => {
+  try {
+    const { attachmentType } = req.body;
+    const lessonId = Number(req.params.id);
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
+
+    const maxFile = await prisma.lessonFile.aggregate({ _max: { fileId: true } });
+    let currentFileId = (maxFile._max.fileId || 0) + 1;
+
+    const files = [];
+    for (const file of req.files) {
+      const lessonFile = await prisma.lessonFile.create({
+        data: {
+          fileId: currentFileId++,
+          lessonId,
+          attachmentType: attachmentType || 'Document',
+          fileName: file.originalname,
+          fileUrl: `/uploads/${file.filename}`
+        }
+      });
+      files.push(lessonFile);
+    }
+
+    res.json({ success: true, files });
+  } catch (err) {
+    console.error("Error uploading files:", err);
+    res.status(500).json({ error: "Failed to upload files" });
+  }
+});
+
+// DELETE /api/lessons/:id/files/:fileId - Delete file from lesson
+app.delete('/api/lessons/:id/files/:fileId', async (req, res) => {
+  try {
+    const fileId = Number(req.params.fileId);
+    
+    const file = await prisma.lessonFile.findUnique({
+      where: { fileId }
+    });
+
+    if (file) {
+      // Delete physical file
+      const filePath = path.join(__dirname, 'uploads', path.basename(file.fileUrl));
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    await prisma.lessonFile.delete({
+      where: { fileId }
+    });
+
+    res.json({ success: true, message: "File deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting file:", err);
+    res.status(500).json({ error: "Failed to delete file" });
   }
 });
 
