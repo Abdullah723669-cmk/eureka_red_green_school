@@ -288,6 +288,30 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running', time: new Date().toISOString() });
 });
 
+// One-time migration trigger — creates Lesson table if missing
+app.get('/api/migrate-lessons', async (req, res) => {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Lesson" (
+        "id"          SERIAL PRIMARY KEY,
+        "grade"       TEXT NOT NULL,
+        "subject"     TEXT NOT NULL,
+        "title"       TEXT NOT NULL,
+        "description" TEXT,
+        "fileType"    TEXT NOT NULL DEFAULT 'link',
+        "fileUrl"     TEXT,
+        "postedBy"    TEXT NOT NULL DEFAULT 'Teacher',
+        "date"        TEXT NOT NULL,
+        "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    const count = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "Lesson"`);
+    res.json({ success: true, message: 'Lesson table created/verified', rows: count });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.get('/', (req, res) => {
   res.json({
     status: 'OK',
