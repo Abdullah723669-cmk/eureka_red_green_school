@@ -78,27 +78,14 @@ model Attendance {
 }
 
 model Lesson {
-  id            Int      @id @default(autoincrement())
-  lessonId      Int      @unique
-  classId       String
-  subjectId     String
-  topicTitle    String
-  description   String?
-  createdBy     Int
-  publishStatus String   @default("Draft")
-  publishedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  files         LessonFile[]
-}
-
-model LessonFile {
-  id             Int      @id @default(autoincrement())
-  fileId         Int      @unique
-  lessonId       Int
-  attachmentType String
-  fileName       String
-  fileUrl        String
-  createdAt      DateTime @default(now())
-  lesson         Lesson   @relation(fields: [lessonId], references: [lessonId], onDelete: Cascade)
+  id          Int      @id @default(autoincrement())
+  grade       String
+  subject     String
+  title       String
+  description String?
+  fileType    String   @default("link")
+  fileUrl     String?
+  postedBy    String   @default("Teacher")
+  date        String
+  createdAt   DateTime @default(now())
 }

@@ -25,6 +25,7 @@ app.get('/api/data', async (req, res) => {
     const expenses = await prisma.expense.findMany({ orderBy: { id: 'desc' } });
     const notices = await prisma.notice.findMany({ orderBy: { id: 'desc' } });
     const attendanceDb = await prisma.attendance.findMany();
+    const lessonsDb = await prisma.lesson.findMany({ orderBy: { id: 'desc' } });
 
     const students = studentsDb.map(s => ({
       id: s.studentId,
@@ -57,7 +58,7 @@ app.get('/api/data', async (req, res) => {
       }
     });
 
-    res.json({ students, staff, grades, transactions, expenses, notices, attendance });
+    res.json({ students, staff, grades, transactions, expenses, notices, attendance, lessons: lessonsDb });
   } catch (err) {
     console.error("Error fetching Prisma DB data:", err);
     res.status(500).json({ error: "Failed to read database" });
@@ -208,7 +209,30 @@ app.post('/api/notices', async (req, res) => {
   }
 });
 
-// 7. Save Grade Entry
+// 7. Post Online Lesson
+app.post('/api/lessons', async (req, res) => {
+  try {
+    const { grade, subject, title, description, fileType, fileUrl, postedBy, date } = req.body;
+    const lesson = await prisma.lesson.create({
+      data: {
+        grade: grade || 'All Classes',
+        subject: subject || 'General',
+        title: title || 'Untitled Lesson',
+        description: description || null,
+        fileType: fileType || 'link',
+        fileUrl: fileUrl || null,
+        postedBy: postedBy || 'Teacher',
+        date: date || new Date().toISOString().split('T')[0]
+      }
+    });
+    res.json({ success: true, lesson });
+  } catch (err) {
+    console.error("Error saving lesson:", err);
+    res.status(500).json({ error: "Failed to save lesson" });
+  }
+});
+
+// 8. Save Grade Entry
 app.post('/api/grades', async (req, res) => {
   try {
     const { studentId, subject, score, term } = req.body;
