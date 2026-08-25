@@ -5,7 +5,8 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.cjs",
+    "build": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio",
     "db:migrate-data": "node scripts/migrate-sqlite-to-postgres.cjs"
