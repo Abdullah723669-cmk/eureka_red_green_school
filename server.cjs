@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
+const { Client } = require('pg');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -214,22 +215,28 @@ app.post('/api/notices', async (req, res) => {
 
 // 7. Post Online Lesson
 app.post('/api/lessons', async (req, res) => {
+  const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
   try {
     const { grade, subject, title, description, fileType, fileUrl, postedBy, date } = req.body;
-    const lesson = await prisma.lesson.create({
-      data: {
-        grade: grade || 'All Classes',
-        subject: subject || 'General',
-        title: title || 'Untitled Lesson',
-        description: description || null,
-        fileType: fileType || 'link',
-        fileUrl: fileUrl || null,
-        postedBy: postedBy || 'Teacher',
-        date: date || new Date().toISOString().split('T')[0]
-      }
-    });
-    res.json({ success: true, lesson });
+    await pgClient.connect();
+    const result = await pgClient.query(
+      `INSERT INTO "Lesson" ("grade","subject","title","description","fileType","fileUrl","postedBy","date")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [
+        grade || 'All Classes',
+        subject || 'General',
+        title || 'Untitled Lesson',
+        description || null,
+        fileType || 'link',
+        fileUrl || null,
+        postedBy || 'Teacher',
+        date || new Date().toISOString().split('T')[0]
+      ]
+    );
+    await pgClient.end();
+    res.json({ success: true, lesson: result.rows[0] });
   } catch (err) {
+    try { await pgClient.end(); } catch(_) {}
     console.error("Error saving lesson:", err);
     res.status(500).json({ error: "Failed to save lesson" });
   }
@@ -290,8 +297,10 @@ app.get('/health', (req, res) => {
 
 // One-time migration trigger — creates Lesson table if missing
 app.get('/api/migrate-lessons', async (req, res) => {
+  const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
   try {
-    await prisma.$executeRawUnsafe(`
+    await pgClient.connect();
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS "Lesson" (
         "id"          SERIAL PRIMARY KEY,
         "grade"       TEXT NOT NULL,
@@ -303,11 +312,13 @@ app.get('/api/migrate-lessons', async (req, res) => {
         "postedBy"    TEXT NOT NULL DEFAULT 'Teacher',
         "date"        TEXT NOT NULL,
         "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
+      )
     `);
-    const count = await prisma.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "Lesson"`);
-    res.json({ success: true, message: 'Lesson table created/verified', rows: count });
+    const countResult = await pgClient.query(`SELECT COUNT(*) as count FROM "Lesson"`);
+    await pgClient.end();
+    res.json({ success: true, message: 'Lesson table created/verified', rows: countResult.rows[0].count });
   } catch (err) {
+    try { await pgClient.end(); } catch(_) {}
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -321,9 +332,11 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  // Auto-migrate: ensure Lesson table exists (safe to run on every startup)
+  // Use raw pg client to create Lesson table — works even if Prisma client is stale
+  const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
   try {
-    await prisma.$executeRawUnsafe(`
+    await pgClient.connect();
+    await pgClient.query(`
       CREATE TABLE IF NOT EXISTS "Lesson" (
         "id"          SERIAL PRIMARY KEY,
         "grade"       TEXT NOT NULL,
@@ -335,11 +348,13 @@ app.listen(PORT, async () => {
         "postedBy"    TEXT NOT NULL DEFAULT 'Teacher',
         "date"        TEXT NOT NULL,
         "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
+      )
     `);
-    console.log('✅ Lesson table verified/created');
+    await pgClient.end();
+    console.log('✅ Lesson table verified/created via pg');
   } catch (e) {
-    console.warn('⚠️ Lesson table auto-migrate warning:', e.message);
+    console.warn('⚠️ pg Lesson table create warning:', e.message);
+    try { await pgClient.end(); } catch(_) {}
   }
   console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
 });
