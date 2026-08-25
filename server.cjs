@@ -25,7 +25,7 @@ app.get('/api/data', async (req, res) => {
     const expenses = await prisma.expense.findMany({ orderBy: { id: 'desc' } });
     const notices = await prisma.notice.findMany({ orderBy: { id: 'desc' } });
     const attendanceDb = await prisma.attendance.findMany();
-    const lessonsDb = await prisma.lesson.findMany({ orderBy: { id: 'desc' } });
+    const lessonsDb = await prisma.lesson.findMany({ orderBy: { id: 'desc' } }).catch(() => []);
 
     const students = studentsDb.map(s => ({
       id: s.studentId,
