@@ -1791,6 +1791,10 @@
                     } else if (colName === 'staff' && data.staff && data.staff.id) {
                         payload.id = data.staff.id;
                         window.saveLocalState();
+                    } else if (colName === 'lessons' && data.lesson && data.lesson.id) {
+                        payload.id = data.lesson.id;
+                        payload.lessonId = data.lesson.id;
+                        window.saveLocalState();
                     }
                     return { success: true, data };
                 } else {
@@ -1894,12 +1898,14 @@
                 badgeIcon.className = "w-8 h-8 rounded-xl bg-emerald-100 text-eureka-green flex items-center justify-center font-bold";
                 badgeIcon.innerHTML = `<i class="fa-solid fa-chalkboard-user text-sm"></i>`;
                 if (logoutBtn) logoutBtn.classList.add('hidden');
+                if (typeof renderTeacherLessonsFeed === 'function') renderTeacherLessonsFeed();
             } else {
                 badgeTitle.innerText = "Student & Parent Portal";
                 badgeIcon.className = "w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold";
                 badgeIcon.innerHTML = `<i class="fa-solid fa-graduation-cap text-sm"></i>`;
                 if (logoutBtn) logoutBtn.classList.add('hidden');
                 renderStudentPortalView(window.activeStudentId);
+                if (typeof renderStudentLessonsFeed === 'function') renderStudentLessonsFeed();
             }
         }
 
@@ -3060,10 +3066,29 @@
 
             const payload = { grade, subject, title, description, fileType, fileUrl, postedBy, date };
             await window.saveToCloud('lessons', payload);
-            showToast(`📚 Lesson published for ${grade} — ${subject}`);
+            showToast(`📚 Lesson published for ${grade} — ${subject} (Saved to Neon DB)`);
             e.target.reset();
             if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+            renderTeacherLessonsFeed();
+            renderStudentLessonsFeed();
         }
+
+        window.deleteLesson = async function(lessonId) {
+            if (!confirm("Are you sure you want to delete this lesson?")) return;
+            window.appData.lessons = (window.appData.lessons || []).filter(l => l.id !== lessonId && l.lessonId !== lessonId);
+            window.saveLocalState();
+            renderTeacherLessonsFeed();
+            renderStudentLessonsFeed();
+
+            try {
+                const baseApi = window.getActiveApiUrl();
+                const endpoint = `${baseApi.replace(/\/$/, '')}/api/lessons/${lessonId}`;
+                await fetch(endpoint, { method: 'DELETE' });
+                showToast("🗑️ Lesson deleted from database");
+            } catch (err) {
+                console.error("Failed to delete lesson:", err);
+            }
+        };
 
         // File-type icon + colour helpers
         function getLessonFileStyle(fileType) {
@@ -3079,7 +3104,7 @@
             return map[fileType] || map['link'];
         }
 
-        function buildLessonCard(lesson) {
+        function buildLessonCard(lesson, isTeacher = false) {
             const fs = getLessonFileStyle(lesson.fileType);
             const hasLink = lesson.fileUrl && lesson.fileUrl.trim();
             const openAttr = hasLink
@@ -3095,6 +3120,13 @@
                 ? `<img src="${lesson.fileUrl}" alt="${lesson.title}" class="w-full mt-2 rounded-xl object-cover max-h-48" loading="lazy">`
                 : '';
 
+            const lessonIdVal = lesson.id || lesson.lessonId;
+            const deleteBtn = isTeacher && lessonIdVal
+                ? `<button onclick="window.deleteLesson(${lessonIdVal})" class="text-[10px] text-red-500 hover:text-red-700 font-semibold flex items-center gap-1 transition">
+                     <i class="fa-solid fa-trash text-[9px]"></i> Delete
+                   </button>`
+                : '';
+
             return `
             <div class="pt-3 space-y-2">
                 <div class="flex items-start gap-3">
@@ -3102,16 +3134,19 @@
                         <i class="fa-solid ${fs.icon} text-sm"></i>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">${lesson.grade}</span>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${lesson.subject}</span>
-                            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${fs.bg} ${fs.text}">${fs.label}</span>
+                        <div class="flex items-center gap-1.5 flex-wrap justify-between">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">${lesson.grade || 'All Classes'}</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">${lesson.subject || 'General'}</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${fs.bg} ${fs.text}">${fs.label}</span>
+                            </div>
+                            ${deleteBtn}
                         </div>
                         <p class="font-bold text-xs text-slate-800 mt-1 leading-snug">${lesson.title}</p>
                         ${lesson.description ? `<p class="text-[11px] text-slate-500 leading-snug mt-0.5">${lesson.description}</p>` : ''}
                         ${mediaBlock}
                         <div class="flex items-center justify-between mt-1.5 flex-wrap gap-1.5">
-                            <span class="text-[10px] text-slate-400"><i class="fa-solid fa-user-tie text-[9px]"></i> ${lesson.postedBy || 'Teacher'} &bull; 📅 ${lesson.date}</span>
+                            <span class="text-[10px] text-slate-400"><i class="fa-solid fa-user-tie text-[9px]"></i> ${lesson.postedBy || 'Teacher'} &bull; 📅 ${lesson.date || ''}</span>
                             ${hasLink ? `<a ${openAttr} class="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg touch-active transition">
                                 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> Open ${fs.label}
                             </a>` : ''}
@@ -3132,7 +3167,7 @@
                 container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">No lessons published yet. Use the form above to post one.</p>`;
                 return;
             }
-            container.innerHTML = list.map(buildLessonCard).join('');
+            container.innerHTML = list.map(l => buildLessonCard(l, true)).join('');
         }
 
         function renderStudentLessonsFeed() {
@@ -3171,7 +3206,7 @@
                 container.innerHTML = `<p class="text-xs text-center text-slate-400 py-4">No lessons found for the selected filters. Try "All Classes" to see everything. 📖</p>`;
                 return;
             }
-            container.innerHTML = list.map(buildLessonCard).join('');
+            container.innerHTML = list.map(l => buildLessonCard(l, false)).join('');
         }
 
         function toggleAttendance(studentId, isPresent) {

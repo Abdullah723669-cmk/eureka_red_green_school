@@ -41,6 +41,42 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Helper to format lesson objects consistently
+function formatLesson(l) {
+  if (!l) return null;
+  let parsedFiles = [];
+  try {
+    if (typeof l.files === 'string') {
+      parsedFiles = JSON.parse(l.files || '[]');
+    } else if (Array.isArray(l.files)) {
+      parsedFiles = l.files;
+    }
+  } catch (_) {
+    parsedFiles = [];
+  }
+
+  return {
+    id: l.id,
+    lessonId: l.id,
+    grade: l.grade || l.classId || 'All Classes',
+    classId: l.classId || l.grade || 'All Classes',
+    subject: l.subject || l.subjectId || 'General',
+    subjectId: l.subjectId || l.subject || 'General',
+    title: l.title || l.topicTitle || 'Untitled Lesson',
+    topicTitle: l.topicTitle || l.title || 'Untitled Lesson',
+    description: l.description || '',
+    fileType: l.fileType || 'link',
+    fileUrl: l.fileUrl || '',
+    postedBy: l.postedBy || 'Teacher',
+    createdBy: l.createdBy || 1,
+    publishStatus: l.publishStatus || 'Published',
+    date: l.date || (l.createdAt ? new Date(l.createdAt).toISOString().split('T')[0] : ''),
+    files: parsedFiles,
+    createdAt: l.createdAt
+  };
+}
 
 // 1. Get All Data
 app.get('/api/data', async (req, res) => {
@@ -52,6 +88,7 @@ app.get('/api/data', async (req, res) => {
     const expenses = await prisma.expense.findMany({ orderBy: { id: 'desc' } });
     const notices = await prisma.notice.findMany({ orderBy: { id: 'desc' } });
     const attendanceDb = await prisma.attendance.findMany();
+    const lessonsDb = await prisma.lesson.findMany({ orderBy: { id: 'desc' } });
 
     const students = studentsDb.map(s => ({
       id: s.studentId,
@@ -85,7 +122,9 @@ app.get('/api/data', async (req, res) => {
       }
     });
 
-    res.json({ students, staff, grades, transactions, expenses, notices, attendance });
+    const lessons = (lessonsDb || []).map(formatLesson);
+
+    res.json({ students, staff, grades, transactions, expenses, notices, attendance, lessons });
   } catch (err) {
     console.error("Error fetching PostgreSQL DB data:", err);
     res.status(500).json({ error: "Failed to read database from PostgreSQL" });
@@ -102,7 +141,6 @@ app.post('/api/students', async (req, res) => {
       const maxStudent = await prisma.student.aggregate({ _max: { studentId: true } });
       targetStudentId = (maxStudent._max.studentId || 100) + 1;
     } else {
-      // Check if studentId is already in use
       const existing = await prisma.student.findUnique({ where: { studentId: targetStudentId } });
       if (existing) {
         const maxStudent = await prisma.student.aggregate({ _max: { studentId: true } });
@@ -141,7 +179,6 @@ app.post('/api/staff', async (req, res) => {
       const maxStaff = await prisma.staff.aggregate({ _max: { staffId: true } });
       targetStaffId = (maxStaff._max.staffId || 0) + 1;
     } else {
-      // Check if staffId is already in use
       const existing = await prisma.staff.findUnique({ where: { staffId: targetStaffId } });
       if (existing) {
         const maxStaff = await prisma.staff.aggregate({ _max: { staffId: true } });
@@ -238,7 +275,216 @@ app.post('/api/notices', async (req, res) => {
   }
 });
 
-// 7. Save Grade Entry
+// 7. Lessons Endpoints
+// GET ALL LESSONS
+app.get('/api/lessons', async (req, res) => {
+  try {
+    const { publishStatus, classId, grade, subjectId, subject } = req.query;
+    let whereClause = {};
+    if (publishStatus) whereClause.publishStatus = publishStatus;
+    if (grade) whereClause.grade = grade;
+    if (classId) whereClause.classId = classId;
+    if (subject) whereClause.subject = subject;
+    if (subjectId) whereClause.subjectId = subjectId;
+
+    const lessonsDb = await prisma.lesson.findMany({
+      where: whereClause,
+      orderBy: { id: 'desc' }
+    });
+
+    const lessons = lessonsDb.map(formatLesson);
+    res.json({ success: true, lessons });
+  } catch (err) {
+    console.error('Error fetching lessons:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch lessons' });
+  }
+});
+
+// GET SINGLE LESSON
+app.get('/api/lessons/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    const lesson = await prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+    
+    res.json({ success: true, lesson: formatLesson(lesson) });
+  } catch (err) {
+    console.error('Error fetching lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch lesson' });
+  }
+});
+
+// CREATE LESSON
+app.post('/api/lessons', async (req, res) => {
+  try {
+    const {
+      grade, classId,
+      subject, subjectId,
+      title, topicTitle,
+      description,
+      fileType,
+      fileUrl,
+      postedBy,
+      createdBy,
+      publishStatus,
+      date,
+      files
+    } = req.body;
+
+    const finalGrade = grade || classId || 'All Classes';
+    const finalClassId = classId || grade || 'All Classes';
+    const finalSubject = subject || subjectId || 'General';
+    const finalSubjectId = subjectId || subject || 'General';
+    const finalTitle = title || topicTitle || 'Untitled Lesson';
+    const finalTopicTitle = topicTitle || title || 'Untitled Lesson';
+    const finalDesc = description || null;
+    const finalFileType = fileType || 'link';
+    const finalFileUrl = fileUrl || null;
+    const finalPostedBy = postedBy || 'Teacher';
+    const finalCreatedBy = Number(createdBy) || 1;
+    const finalStatus = publishStatus || 'Published';
+    const finalDate = date || new Date().toISOString().split('T')[0];
+    const finalFiles = typeof files === 'string' ? files : JSON.stringify(files || []);
+
+    const lesson = await prisma.lesson.create({
+      data: {
+        grade: finalGrade,
+        classId: finalClassId,
+        subject: finalSubject,
+        subjectId: finalSubjectId,
+        title: finalTitle,
+        topicTitle: finalTopicTitle,
+        description: finalDesc,
+        fileType: finalFileType,
+        fileUrl: finalFileUrl,
+        postedBy: finalPostedBy,
+        createdBy: finalCreatedBy,
+        publishStatus: finalStatus,
+        date: finalDate,
+        files: finalFiles
+      }
+    });
+
+    console.log("✅ Lesson saved to Neon DB:", lesson.id, finalTitle);
+    res.json({ success: true, lesson: formatLesson(lesson) });
+  } catch (err) {
+    console.error("Error creating lesson:", err);
+    res.status(500).json({ error: "Failed to create lesson", details: err.message });
+  }
+});
+
+// UPDATE LESSON
+app.put('/api/lessons/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    const {
+      grade, classId,
+      subject, subjectId,
+      title, topicTitle,
+      description,
+      fileType,
+      fileUrl,
+      postedBy,
+      createdBy,
+      publishStatus,
+      date,
+      files
+    } = req.body;
+
+    const dataToUpdate = {};
+    if (grade !== undefined || classId !== undefined) {
+      dataToUpdate.grade = grade || classId;
+      dataToUpdate.classId = classId || grade;
+    }
+    if (subject !== undefined || subjectId !== undefined) {
+      dataToUpdate.subject = subject || subjectId;
+      dataToUpdate.subjectId = subjectId || subject;
+    }
+    if (title !== undefined || topicTitle !== undefined) {
+      dataToUpdate.title = title || topicTitle;
+      dataToUpdate.topicTitle = topicTitle || title;
+    }
+    if (description !== undefined) dataToUpdate.description = description;
+    if (fileType !== undefined) dataToUpdate.fileType = fileType;
+    if (fileUrl !== undefined) dataToUpdate.fileUrl = fileUrl;
+    if (postedBy !== undefined) dataToUpdate.postedBy = postedBy;
+    if (createdBy !== undefined) dataToUpdate.createdBy = Number(createdBy);
+    if (publishStatus !== undefined) dataToUpdate.publishStatus = publishStatus;
+    if (date !== undefined) dataToUpdate.date = date;
+    if (files !== undefined) {
+      dataToUpdate.files = typeof files === 'string' ? files : JSON.stringify(files || []);
+    }
+
+    const lesson = await prisma.lesson.update({
+      where: { id },
+      data: dataToUpdate
+    });
+
+    res.json({ success: true, lesson: formatLesson(lesson) });
+  } catch (err) {
+    console.error('Error updating lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to update lesson' });
+  }
+});
+
+// DELETE LESSON
+app.delete('/api/lessons/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    await prisma.lesson.delete({ where: { id } });
+    res.json({ success: true, message: 'Lesson deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to delete lesson' });
+  }
+});
+
+// UPLOAD LESSON FILES
+app.post('/api/lessons/:id/files', upload.array('files'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    const attachmentType = req.body.attachmentType || 'document';
+    const lesson = await prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+    
+    let existingFiles = [];
+    try {
+      existingFiles = lesson.files ? JSON.parse(lesson.files) : [];
+    } catch (_) {
+      existingFiles = [];
+    }
+    
+    if (req.files && req.files.length > 0) {
+      const newFiles = req.files.map(file => ({
+        name: file.originalname,
+        url: `/uploads/${file.filename}`,
+        type: attachmentType,
+        size: file.size
+      }));
+      existingFiles = [...existingFiles, ...newFiles];
+    }
+    
+    const updatedLesson = await prisma.lesson.update({
+      where: { id },
+      data: { files: JSON.stringify(existingFiles) }
+    });
+    
+    res.json({ success: true, lesson: formatLesson(updatedLesson) });
+  } catch (err) {
+    console.error('Error uploading files:', err);
+    res.status(500).json({ success: false, error: 'Failed to upload files' });
+  }
+});
+
+// 8. Save Grade Entry
 app.post('/api/grades', async (req, res) => {
   try {
     const { studentId, subject, score, term } = req.body;
@@ -257,7 +503,7 @@ app.post('/api/grades', async (req, res) => {
   }
 });
 
-// 8. Daily Attendance Roll Call
+// 9. Daily Attendance Roll Call
 app.post('/api/attendance', async (req, res) => {
   try {
     const { date, records } = req.body;
@@ -286,155 +532,12 @@ app.get('/api/attendance', async (req, res) => {
   }
 });
 
-// =====================================================
-// 9. Online Teaching - Lessons API
-// =====================================================
-
-// GET ALL LESSONS
-app.get('/api/lessons', async (req, res) => {
-  try {
-    const { publishStatus, classId, subjectId } = req.query;
-    let whereClause = {};
-    if (publishStatus) whereClause.publishStatus = publishStatus;
-    if (classId) whereClause.classId = classId;
-    if (subjectId) whereClause.subjectId = subjectId;
-
-    const lessons = await prisma.lesson.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' }
-    });
-
-    const formattedLessons = lessons.map(lesson => ({
-      ...lesson,
-      files: lesson.files ? JSON.parse(lesson.files) : []
-    }));
-
-    res.json({ success: true, lessons: formattedLessons });
-  } catch (err) {
-    console.error('Error fetching lessons:', err);
-    res.status(500).json({ success: false, error: 'Failed to fetch lessons' });
-  }
-});
-
-// GET SINGLE LESSON
-app.get('/api/lessons/:id', async (req, res) => {
-  try {
-    const lessonId = Number(req.params.id);
-    const lesson = await prisma.lesson.findUnique({ where: { lessonId } });
-    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
-    
-    lesson.files = lesson.files ? JSON.parse(lesson.files) : [];
-    res.json({ success: true, lesson });
-  } catch (err) {
-    console.error('Error fetching lesson:', err);
-    res.status(500).json({ success: false, error: 'Failed to fetch lesson' });
-  }
-});
-
-// CREATE LESSON
-app.post('/api/lessons', async (req, res) => {
-  try {
-    const { classId, subjectId, topicTitle, description, createdBy, publishStatus } = req.body;
-    if (!classId || !subjectId || !topicTitle) {
-      return res.status(400).json({ success: false, error: 'classId, subjectId, topicTitle are required' });
-    }
-
-    const lesson = await prisma.lesson.create({
-      data: {
-        classId,
-        subjectId,
-        topicTitle,
-        description: description || null,
-        createdBy: createdBy || 1,
-        publishStatus: publishStatus || 'Draft',
-        files: '[]'
-      }
-    });
-
-    res.status(201).json({ success: true, lesson: { ...lesson, files: [] } });
-  } catch (err) {
-    console.error('Error creating lesson:', err);
-    res.status(500).json({ success: false, error: 'Failed to create lesson' });
-  }
-});
-
-// UPDATE LESSON
-app.put('/api/lessons/:id', async (req, res) => {
-  try {
-    const lessonId = Number(req.params.id);
-    const { classId, subjectId, topicTitle, description, publishStatus } = req.body;
-
-    const lesson = await prisma.lesson.update({
-      where: { lessonId },
-      data: {
-        ...(classId !== undefined && { classId }),
-        ...(subjectId !== undefined && { subjectId }),
-        ...(topicTitle !== undefined && { topicTitle }),
-        ...(description !== undefined && { description }),
-        ...(publishStatus !== undefined && { publishStatus })
-      }
-    });
-
-    lesson.files = lesson.files ? JSON.parse(lesson.files) : [];
-    res.json({ success: true, lesson });
-  } catch (err) {
-    console.error('Error updating lesson:', err);
-    res.status(500).json({ success: false, error: 'Failed to update lesson' });
-  }
-});
-
-// DELETE LESSON
-app.delete('/api/lessons/:id', async (req, res) => {
-  try {
-    const lessonId = Number(req.params.id);
-    await prisma.lesson.delete({ where: { lessonId } });
-    res.json({ success: true, message: 'Lesson deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting lesson:', err);
-    res.status(500).json({ success: false, error: 'Failed to delete lesson' });
-  }
-});
-
-// UPLOAD LESSON FILES
-app.post('/api/lessons/:id/files', upload.array('files'), async (req, res) => {
-  try {
-    const lessonId = Number(req.params.id);
-    const attachmentType = req.body.attachmentType || 'document';
-    
-    const lesson = await prisma.lesson.findUnique({ where: { lessonId } });
-    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
-    
-    let existingFiles = lesson.files ? JSON.parse(lesson.files) : [];
-    
-    if (req.files) {
-      const newFiles = req.files.map(file => ({
-        name: file.originalname,
-        url: `/uploads/${file.filename}`,
-        type: attachmentType,
-        size: file.size
-      }));
-      existingFiles = [...existingFiles, ...newFiles];
-    }
-    
-    const updatedLesson = await prisma.lesson.update({
-      where: { lessonId },
-      data: { files: JSON.stringify(existingFiles) }
-    });
-    
-    updatedLesson.files = existingFiles;
-    res.json({ success: true, lesson: updatedLesson });
-  } catch (err) {
-    console.error('Error uploading files:', err);
-    res.status(500).json({ success: false, error: 'Failed to upload files' });
-  }
-});
-
 // Health Check Endpoints
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running', time: new Date().toISOString() });
 });
 
-app.get('/', (req, res) => {
+app.get('/api/status', (req, res) => {
   res.json({
     status: 'OK',
     message: 'Eureka School Backend is running and connected to Neon PostgreSQL',
@@ -443,5 +546,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Eureka School Prisma Server running on port: ${PORT}`);
+  console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
 });

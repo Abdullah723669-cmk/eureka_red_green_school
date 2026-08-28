@@ -3,10 +3,38 @@ const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const { Client } = require('pg');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
-const prisma = new PrismaClient();
+// Use DIRECT_URL for Prisma to avoid Neon pooler cold-start / timeout issues
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DIRECT_URL || process.env.DATABASE_URL,
+    },
+  },
+});
 const PORT = process.env.PORT || 5000;
+
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
 
 // Enable CORS for all origins and headers
 app.use(cors({
@@ -15,6 +43,43 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+app.use('/uploads', express.static(uploadsDir));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Helper to format lesson objects consistently
+function formatLesson(l) {
+  if (!l) return null;
+  let parsedFiles = [];
+  try {
+    if (typeof l.files === 'string') {
+      parsedFiles = JSON.parse(l.files || '[]');
+    } else if (Array.isArray(l.files)) {
+      parsedFiles = l.files;
+    }
+  } catch (_) {
+    parsedFiles = [];
+  }
+
+  return {
+    id: l.id,
+    lessonId: l.id,
+    grade: l.grade || l.classId || 'All Classes',
+    classId: l.classId || l.grade || 'All Classes',
+    subject: l.subject || l.subjectId || 'General',
+    subjectId: l.subjectId || l.subject || 'General',
+    title: l.title || l.topicTitle || 'Untitled Lesson',
+    topicTitle: l.topicTitle || l.title || 'Untitled Lesson',
+    description: l.description || '',
+    fileType: l.fileType || 'link',
+    fileUrl: l.fileUrl || '',
+    postedBy: l.postedBy || 'Teacher',
+    createdBy: l.createdBy || 1,
+    publishStatus: l.publishStatus || 'Published',
+    date: l.date || (l.createdAt ? new Date(l.createdAt).toISOString().split('T')[0] : ''),
+    files: parsedFiles,
+    createdAt: l.createdAt
+  };
+}
 
 // 1. Get All Data
 app.get('/api/data', async (req, res) => {
@@ -27,9 +92,21 @@ app.get('/api/data', async (req, res) => {
     const notices = await prisma.notice.findMany({ orderBy: { id: 'desc' } });
     const attendanceDb = await prisma.attendance.findMany();
 
-    // Lesson table may not exist yet — fail gracefully
     let lessonsDb = [];
-    try { lessonsDb = await prisma.lesson.findMany({ orderBy: { id: 'desc' } }); } catch(_) {}
+    try {
+      lessonsDb = await prisma.lesson.findMany({ orderBy: { id: 'desc' } });
+    } catch (e) {
+      console.warn("Failed to fetch lessons via prisma, fallback to pg client:", e.message);
+      const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+      try {
+        await pgClient.connect();
+        const r = await pgClient.query('SELECT * FROM "Lesson" ORDER BY id DESC');
+        lessonsDb = r.rows;
+        await pgClient.end();
+      } catch (err2) {
+        try { await pgClient.end(); } catch (_) {}
+      }
+    }
 
     const students = studentsDb.map(s => ({
       id: s.studentId,
@@ -62,7 +139,9 @@ app.get('/api/data', async (req, res) => {
       }
     });
 
-    res.json({ students, staff, grades, transactions, expenses, notices, attendance, lessons: lessonsDb });
+    const lessons = (lessonsDb || []).map(formatLesson);
+
+    res.json({ students, staff, grades, transactions, expenses, notices, attendance, lessons });
   } catch (err) {
     console.error("Error fetching Prisma DB data:", err);
     res.status(500).json({ error: "Failed to read database" });
@@ -213,32 +292,212 @@ app.post('/api/notices', async (req, res) => {
   }
 });
 
-// 7. Post Online Lesson
-app.post('/api/lessons', async (req, res) => {
-  const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+// 7. Lessons Endpoints
+// GET ALL LESSONS
+app.get('/api/lessons', async (req, res) => {
   try {
-    const { grade, subject, title, description, fileType, fileUrl, postedBy, date } = req.body;
-    await pgClient.connect();
-    const result = await pgClient.query(
-      `INSERT INTO "Lesson" ("grade","subject","title","description","fileType","fileUrl","postedBy","date")
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
-      [
-        grade || 'All Classes',
-        subject || 'General',
-        title || 'Untitled Lesson',
-        description || null,
-        fileType || 'link',
-        fileUrl || null,
-        postedBy || 'Teacher',
-        date || new Date().toISOString().split('T')[0]
-      ]
-    );
-    await pgClient.end();
-    res.json({ success: true, lesson: result.rows[0] });
+    const { publishStatus, classId, grade, subjectId, subject } = req.query;
+    let whereClause = {};
+    if (publishStatus) whereClause.publishStatus = publishStatus;
+    if (grade) whereClause.grade = grade;
+    if (classId) whereClause.classId = classId;
+    if (subject) whereClause.subject = subject;
+    if (subjectId) whereClause.subjectId = subjectId;
+
+    const lessonsDb = await prisma.lesson.findMany({
+      where: whereClause,
+      orderBy: { id: 'desc' }
+    });
+
+    const lessons = lessonsDb.map(formatLesson);
+    res.json({ success: true, lessons });
   } catch (err) {
-    try { await pgClient.end(); } catch(_) {}
+    console.error('Error fetching lessons:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch lessons' });
+  }
+});
+
+// GET SINGLE LESSON
+app.get('/api/lessons/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    const lesson = await prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+    
+    res.json({ success: true, lesson: formatLesson(lesson) });
+  } catch (err) {
+    console.error('Error fetching lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch lesson' });
+  }
+});
+
+// CREATE LESSON
+app.post('/api/lessons', async (req, res) => {
+  try {
+    const {
+      grade, classId,
+      subject, subjectId,
+      title, topicTitle,
+      description,
+      fileType,
+      fileUrl,
+      postedBy,
+      createdBy,
+      publishStatus,
+      date,
+      files
+    } = req.body;
+
+    const finalGrade = grade || classId || 'All Classes';
+    const finalClassId = classId || grade || 'All Classes';
+    const finalSubject = subject || subjectId || 'General';
+    const finalSubjectId = subjectId || subject || 'General';
+    const finalTitle = title || topicTitle || 'Untitled Lesson';
+    const finalTopicTitle = topicTitle || title || 'Untitled Lesson';
+    const finalDesc = description || null;
+    const finalFileType = fileType || 'link';
+    const finalFileUrl = fileUrl || null;
+    const finalPostedBy = postedBy || 'Teacher';
+    const finalCreatedBy = Number(createdBy) || 1;
+    const finalStatus = publishStatus || 'Published';
+    const finalDate = date || new Date().toISOString().split('T')[0];
+    const finalFiles = typeof files === 'string' ? files : JSON.stringify(files || []);
+
+    const lesson = await prisma.lesson.create({
+      data: {
+        grade: finalGrade,
+        classId: finalClassId,
+        subject: finalSubject,
+        subjectId: finalSubjectId,
+        title: finalTitle,
+        topicTitle: finalTopicTitle,
+        description: finalDesc,
+        fileType: finalFileType,
+        fileUrl: finalFileUrl,
+        postedBy: finalPostedBy,
+        createdBy: finalCreatedBy,
+        publishStatus: finalStatus,
+        date: finalDate,
+        files: finalFiles
+      }
+    });
+
+    console.log("✅ Lesson saved to Neon DB:", lesson.id, finalTitle);
+    res.json({ success: true, lesson: formatLesson(lesson) });
+  } catch (err) {
     console.error("Error saving lesson:", err);
-    res.status(500).json({ error: "Failed to save lesson" });
+    res.status(500).json({ error: "Failed to save lesson", details: err.message });
+  }
+});
+
+// UPDATE LESSON
+app.put('/api/lessons/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    const {
+      grade, classId,
+      subject, subjectId,
+      title, topicTitle,
+      description,
+      fileType,
+      fileUrl,
+      postedBy,
+      createdBy,
+      publishStatus,
+      date,
+      files
+    } = req.body;
+
+    const dataToUpdate = {};
+    if (grade !== undefined || classId !== undefined) {
+      dataToUpdate.grade = grade || classId;
+      dataToUpdate.classId = classId || grade;
+    }
+    if (subject !== undefined || subjectId !== undefined) {
+      dataToUpdate.subject = subject || subjectId;
+      dataToUpdate.subjectId = subjectId || subject;
+    }
+    if (title !== undefined || topicTitle !== undefined) {
+      dataToUpdate.title = title || topicTitle;
+      dataToUpdate.topicTitle = topicTitle || title;
+    }
+    if (description !== undefined) dataToUpdate.description = description;
+    if (fileType !== undefined) dataToUpdate.fileType = fileType;
+    if (fileUrl !== undefined) dataToUpdate.fileUrl = fileUrl;
+    if (postedBy !== undefined) dataToUpdate.postedBy = postedBy;
+    if (createdBy !== undefined) dataToUpdate.createdBy = Number(createdBy);
+    if (publishStatus !== undefined) dataToUpdate.publishStatus = publishStatus;
+    if (date !== undefined) dataToUpdate.date = date;
+    if (files !== undefined) {
+      dataToUpdate.files = typeof files === 'string' ? files : JSON.stringify(files || []);
+    }
+
+    const lesson = await prisma.lesson.update({
+      where: { id },
+      data: dataToUpdate
+    });
+
+    res.json({ success: true, lesson: formatLesson(lesson) });
+  } catch (err) {
+    console.error('Error updating lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to update lesson' });
+  }
+});
+
+// DELETE LESSON
+app.delete('/api/lessons/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    await prisma.lesson.delete({ where: { id } });
+    res.json({ success: true, message: 'Lesson deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to delete lesson' });
+  }
+});
+
+// UPLOAD LESSON FILES
+app.post('/api/lessons/:id/files', upload.array('files'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id || isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid lesson ID' });
+
+    const attachmentType = req.body.attachmentType || 'document';
+    const lesson = await prisma.lesson.findUnique({ where: { id } });
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+    
+    let existingFiles = [];
+    try {
+      existingFiles = lesson.files ? JSON.parse(lesson.files) : [];
+    } catch (_) {
+      existingFiles = [];
+    }
+    
+    if (req.files && req.files.length > 0) {
+      const newFiles = req.files.map(file => ({
+        name: file.originalname,
+        url: `/uploads/${file.filename}`,
+        type: attachmentType,
+        size: file.size
+      }));
+      existingFiles = [...existingFiles, ...newFiles];
+    }
+    
+    const updatedLesson = await prisma.lesson.update({
+      where: { id },
+      data: { files: JSON.stringify(existingFiles) }
+    });
+    
+    res.json({ success: true, lesson: formatLesson(updatedLesson) });
+  } catch (err) {
+    console.error('Error uploading files:', err);
+    res.status(500).json({ success: false, error: 'Failed to upload files' });
   }
 });
 
@@ -261,7 +520,7 @@ app.post('/api/grades', async (req, res) => {
   }
 });
 
-// 8. Daily Attendance Roll Call
+// 9. Daily Attendance Roll Call
 app.post('/api/attendance', async (req, res) => {
   try {
     const { date, records } = req.body;
@@ -295,35 +554,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running', time: new Date().toISOString() });
 });
 
-// One-time migration trigger — creates Lesson table if missing
-app.get('/api/migrate-lessons', async (req, res) => {
-  const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-  try {
-    await pgClient.connect();
-    await pgClient.query(`
-      CREATE TABLE IF NOT EXISTS "Lesson" (
-        "id"          SERIAL PRIMARY KEY,
-        "grade"       TEXT NOT NULL,
-        "subject"     TEXT NOT NULL,
-        "title"       TEXT NOT NULL,
-        "description" TEXT,
-        "fileType"    TEXT NOT NULL DEFAULT 'link',
-        "fileUrl"     TEXT,
-        "postedBy"    TEXT NOT NULL DEFAULT 'Teacher',
-        "date"        TEXT NOT NULL,
-        "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    const countResult = await pgClient.query(`SELECT COUNT(*) as count FROM "Lesson"`);
-    await pgClient.end();
-    res.json({ success: true, message: 'Lesson table created/verified', rows: countResult.rows[0].count });
-  } catch (err) {
-    try { await pgClient.end(); } catch(_) {}
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get('/', (req, res) => {
+app.get('/api/status', (req, res) => {
   res.json({
     status: 'OK',
     message: 'Eureka School Backend is running and connected to Neon PostgreSQL',
@@ -331,30 +562,18 @@ app.get('/', (req, res) => {
   });
 });
 
-app.listen(PORT, async () => {
-  // Use raw pg client to create Lesson table — works even if Prisma client is stale
-  const pgClient = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-  try {
-    await pgClient.connect();
-    await pgClient.query(`
-      CREATE TABLE IF NOT EXISTS "Lesson" (
-        "id"          SERIAL PRIMARY KEY,
-        "grade"       TEXT NOT NULL,
-        "subject"     TEXT NOT NULL,
-        "title"       TEXT NOT NULL,
-        "description" TEXT,
-        "fileType"    TEXT NOT NULL DEFAULT 'link',
-        "fileUrl"     TEXT,
-        "postedBy"    TEXT NOT NULL DEFAULT 'Teacher',
-        "date"        TEXT NOT NULL,
-        "createdAt"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    await pgClient.end();
-    console.log('✅ Lesson table verified/created via pg');
-  } catch (e) {
-    console.warn('⚠️ pg Lesson table create warning:', e.message);
-    try { await pgClient.end(); } catch(_) {}
-  }
-  console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
-});
+// Connect Prisma and then start listening
+prisma.$connect()
+  .then(() => {
+    console.log('✅ Prisma connected to Neon PostgreSQL');
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Prisma failed to connect:', err.message);
+    console.log('⚠️  Starting server anyway (will retry per-request)...');
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Eureka School Prisma Server running on http://localhost:${PORT}`);
+    });
+  });
