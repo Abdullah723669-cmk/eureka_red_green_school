@@ -79,14 +79,14 @@ model Attendance {
 }
 
 model Lesson {
-  id          Int      @id @default(autoincrement())
-  grade       String
-  subject     String
-  title       String
-  description String?
-  fileType    String   @default("link")
-  fileUrl     String?
-  postedBy    String   @default("Teacher")
-  date        String
-  createdAt   DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  lessonId      Int      @unique @default(autoincrement())
+  classId       String
+  subjectId     String
+  topicTitle    String
+  description   String?
+  publishStatus String   @default("Draft")
+  createdBy     Int      @default(1)
+  files         String?  
+  createdAt     DateTime @default(now())
 }

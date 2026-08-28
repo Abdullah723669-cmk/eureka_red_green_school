@@ -293,212 +293,139 @@ app.get('/api/attendance', async (req, res) => {
 // GET ALL LESSONS
 app.get('/api/lessons', async (req, res) => {
   try {
+    const { publishStatus, classId, subjectId } = req.query;
+    let whereClause = {};
+    if (publishStatus) whereClause.publishStatus = publishStatus;
+    if (classId) whereClause.classId = classId;
+    if (subjectId) whereClause.subjectId = subjectId;
+
     const lessons = await prisma.lesson.findMany({
-      orderBy: {
-        createdAt: 'desc'
-      }
+      where: whereClause,
+      orderBy: { createdAt: 'desc' }
     });
 
-    res.json({
-      success: true,
-      lessons
-    });
+    const formattedLessons = lessons.map(lesson => ({
+      ...lesson,
+      files: lesson.files ? JSON.parse(lesson.files) : []
+    }));
 
+    res.json({ success: true, lessons: formattedLessons });
   } catch (err) {
-    console.error('Error fetching lessons from PostgreSQL:', err);
-
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch lessons',
-      details: err.message
-    });
+    console.error('Error fetching lessons:', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch lessons' });
   }
 });
-
 
 // GET SINGLE LESSON
 app.get('/api/lessons/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-
-    if (!Number.isInteger(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid lesson ID'
-      });
-    }
-
-    const lesson = await prisma.lesson.findUnique({
-      where: {
-        id
-      }
-    });
-
-    if (!lesson) {
-      return res.status(404).json({
-        success: false,
-        error: 'Lesson not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      lesson
-    });
-
+    const lessonId = Number(req.params.id);
+    const lesson = await prisma.lesson.findUnique({ where: { lessonId } });
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+    
+    lesson.files = lesson.files ? JSON.parse(lesson.files) : [];
+    res.json({ success: true, lesson });
   } catch (err) {
     console.error('Error fetching lesson:', err);
-
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch lesson',
-      details: err.message
-    });
+    res.status(500).json({ success: false, error: 'Failed to fetch lesson' });
   }
 });
-
 
 // CREATE LESSON
 app.post('/api/lessons', async (req, res) => {
   try {
-    const {
-      grade,
-      subject,
-      title,
-      description,
-      fileType,
-      fileUrl,
-      postedBy,
-      date
-    } = req.body;
-
-    // Validate required fields
-    if (!grade || !subject || !title || !date) {
-      return res.status(400).json({
-        success: false,
-        error: 'grade, subject, title and date are required'
-      });
+    const { classId, subjectId, topicTitle, description, createdBy, publishStatus } = req.body;
+    if (!classId || !subjectId || !topicTitle) {
+      return res.status(400).json({ success: false, error: 'classId, subjectId, topicTitle are required' });
     }
 
     const lesson = await prisma.lesson.create({
       data: {
-        grade,
-        subject,
-        title,
+        classId,
+        subjectId,
+        topicTitle,
         description: description || null,
-        fileType: fileType || 'link',
-        fileUrl: fileUrl || null,
-        postedBy: postedBy || 'Teacher',
-        date
+        createdBy: createdBy || 1,
+        publishStatus: publishStatus || 'Draft',
+        files: '[]'
       }
     });
 
-    console.log('✅ Lesson saved to Neon:', lesson);
-
-    res.status(201).json({
-      success: true,
-      lesson
-    });
-
+    res.status(201).json({ success: true, lesson: { ...lesson, files: [] } });
   } catch (err) {
-    console.error('❌ Error creating lesson in PostgreSQL:', err);
-
-    res.status(500).json({
-      success: false,
-      error: 'Failed to create lesson',
-      details: err.message
-    });
+    console.error('Error creating lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to create lesson' });
   }
 });
-
 
 // UPDATE LESSON
 app.put('/api/lessons/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-
-    if (!Number.isInteger(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid lesson ID'
-      });
-    }
-
-    const {
-      grade,
-      subject,
-      title,
-      description,
-      fileType,
-      fileUrl,
-      postedBy,
-      date
-    } = req.body;
+    const lessonId = Number(req.params.id);
+    const { classId, subjectId, topicTitle, description, publishStatus } = req.body;
 
     const lesson = await prisma.lesson.update({
-      where: {
-        id
-      },
+      where: { lessonId },
       data: {
-        ...(grade !== undefined && { grade }),
-        ...(subject !== undefined && { subject }),
-        ...(title !== undefined && { title }),
+        ...(classId !== undefined && { classId }),
+        ...(subjectId !== undefined && { subjectId }),
+        ...(topicTitle !== undefined && { topicTitle }),
         ...(description !== undefined && { description }),
-        ...(fileType !== undefined && { fileType }),
-        ...(fileUrl !== undefined && { fileUrl }),
-        ...(postedBy !== undefined && { postedBy }),
-        ...(date !== undefined && { date })
+        ...(publishStatus !== undefined && { publishStatus })
       }
     });
 
-    res.json({
-      success: true,
-      lesson
-    });
-
+    lesson.files = lesson.files ? JSON.parse(lesson.files) : [];
+    res.json({ success: true, lesson });
   } catch (err) {
-    console.error('❌ Error updating lesson:', err);
-
-    res.status(500).json({
-      success: false,
-      error: 'Failed to update lesson',
-      details: err.message
-    });
+    console.error('Error updating lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to update lesson' });
   }
 });
-
 
 // DELETE LESSON
 app.delete('/api/lessons/:id', async (req, res) => {
   try {
-    const id = Number(req.params.id);
-
-    if (!Number.isInteger(id)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid lesson ID'
-      });
-    }
-
-    await prisma.lesson.delete({
-      where: {
-        id
-      }
-    });
-
-    res.json({
-      success: true,
-      message: 'Lesson deleted successfully'
-    });
-
+    const lessonId = Number(req.params.id);
+    await prisma.lesson.delete({ where: { lessonId } });
+    res.json({ success: true, message: 'Lesson deleted successfully' });
   } catch (err) {
-    console.error('❌ Error deleting lesson:', err);
+    console.error('Error deleting lesson:', err);
+    res.status(500).json({ success: false, error: 'Failed to delete lesson' });
+  }
+});
 
-    res.status(500).json({
-      success: false,
-      error: 'Failed to delete lesson',
-      details: err.message
+// UPLOAD LESSON FILES
+app.post('/api/lessons/:id/files', upload.array('files'), async (req, res) => {
+  try {
+    const lessonId = Number(req.params.id);
+    const attachmentType = req.body.attachmentType || 'document';
+    
+    const lesson = await prisma.lesson.findUnique({ where: { lessonId } });
+    if (!lesson) return res.status(404).json({ success: false, error: 'Lesson not found' });
+    
+    let existingFiles = lesson.files ? JSON.parse(lesson.files) : [];
+    
+    if (req.files) {
+      const newFiles = req.files.map(file => ({
+        name: file.originalname,
+        url: `/uploads/${file.filename}`,
+        type: attachmentType,
+        size: file.size
+      }));
+      existingFiles = [...existingFiles, ...newFiles];
+    }
+    
+    const updatedLesson = await prisma.lesson.update({
+      where: { lessonId },
+      data: { files: JSON.stringify(existingFiles) }
     });
+    
+    updatedLesson.files = existingFiles;
+    res.json({ success: true, lesson: updatedLesson });
+  } catch (err) {
+    console.error('Error uploading files:', err);
+    res.status(500).json({ success: false, error: 'Failed to upload files' });
   }
 });
 
